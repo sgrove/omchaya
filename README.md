@@ -2,15 +2,24 @@
 
 A [ClojureScript](https://github.com/clojure/clojurescript) + [Om](https://github.com/swannodette/om) frontend for [Kandan](http://kandanapp.com/). An example app that's actually useful.
 
-## Setup
-
-Compile the files
+## Getting the project
 
     git clone https://github.com/sgrove/omchaya.git
     cd omchaya
+
+## Running locally
+
+    ./run_server.sh
+
+This will compile the CLJS code to JS once and start the server hosting the assets.
+
+## Developing locally
+
+Start the auto recompiler for the CLJS code:
+
     lein cljsbuild auto
 
 Serve the assets:
 
-    open http://localhost:9000/
     python -m SimpleHTTPServer 9000
+    open http://localhost:9000/
