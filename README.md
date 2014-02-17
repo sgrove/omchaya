@@ -6,10 +6,11 @@ A [ClojureScript](https://github.com/clojure/clojurescript) + [Om](https://githu
 
 Compile the files
 
-    git clone
+    git clone https://github.com/sgrove/omchaya.git
     cd omchaya
     lein cljsbuild auto
 
 Serve the assets:
 
+    open http://localhost:9000/
     python -m SimpleHTTPServer 9000
