@@ -30,4 +30,4 @@
                            :on-submit (constantly false)}]]
           [:ul#channel_nav
            (map (partial tab comm) (sort-by :order (vals (:channels data))))
-           [:li {:key "new-tab" :style #js {:bottom 7}} [:a#create_channel {:href "#"} [:i.icon-plus]]]]])))))
+           [:li {:key "new-tab"} [:a#create_channel {:href "#"} [:strong " + "]]]]])))))
