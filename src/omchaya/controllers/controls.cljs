@@ -82,7 +82,7 @@
   (let [[channel-id url] args]
     (update-in state [:channels channel-id :player :playlist]
                (fn [playlist]
-                 (conj playlist {:order (count playlist)
+                 (conj playlist {:order (inc (count playlist))
                                  :src url})))))
 
 (defmethod control-event :playlist-entry-played
