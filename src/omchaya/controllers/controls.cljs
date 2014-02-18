@@ -118,5 +118,6 @@
 
 (defmethod control-event :user-logged-out
   [target message args state]
-  (assoc-in state [:settings :menus :user-menu :open] false)
-  (assoc-in state [:current-user-email] nil))
+  (-> state
+      (assoc-in [:settings :menus :user-menu :open] false)
+      (assoc-in [:current-user-email] nil)))
