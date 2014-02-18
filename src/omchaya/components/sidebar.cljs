@@ -45,6 +45,7 @@
 
 (defn playlist-entry [comm opts entry]
   (let [src (:src entry)
+        order (:order entry)
         name (-> (:src entry)
                  (string/split #"/")
                  last
@@ -52,14 +53,14 @@
                  first
                  gstring/urlDecode)]
     [:li.user
-     (merge {:title (:src entry)
+     (merge {:title src
              :key (str (:order entry) src)}
             (when (= (:order entry) (get-in opts [:channels (:selected-channel opts) :player :playing-order]))
               {:style #js {:background-color "#ccc"}}))
      [:a
       {:style #js {:cursor "pointer"}
        :on-click (comp (constantly false)
-                       #(put! comm [:playlist-entry-played [(:order entry) (:selected-channel opts)]]))}
+                       #(put! comm [:playlist-entry-played [order (:selected-channel opts)]]))}
       (:order entry) ". " name]]))
 
 (defn playlist-widget [player-data owner opts]
