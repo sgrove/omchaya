@@ -1,9 +1,5 @@
 (ns omchaya.components.app
-  (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
-            [clojure.string :as string]
-            [goog.crypt :as crypt]
-            [goog.crypt.Md5]
-            [omchaya.datetime :as dt]
+  (:require [omchaya.components.audio-player :as audio]
             [omchaya.components.navbar :as navbar]
             [omchaya.components.sidebar :as sidebar]
             [omchaya.components.main-area :as main-area]
@@ -18,11 +14,17 @@
             current-user (get-in app [:users (:current-user-email app)])]
         (html/html
          [:div
+          (om/build-all audio/player (map (fn [[channel-id channel]]
+                                            {:audio-settings (:audio app)
+                                             :player (:player channel)
+                                             :sfx (:sfx channel)
+                                             :id channel-id}) (:channels app)))
           (om/build sidebar/sidebar {:channel selected-channel
                                      :settings (:settings app)}
                     {:opts {:comms (:comms opts)
                             :users (:users app)
-                            :current-user-email (:current-user-email app)}})
+                            :current-user-email (:current-user-email app)
+                            :selected-channel (:selected-channel app)}})
           (om/build main-area/main-area selected-channel {:opts {:comms (:comms opts)
                                                                  :users (:users app)
                                                                  :current-user-email (:current-user-email app)

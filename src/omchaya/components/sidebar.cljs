@@ -1,6 +1,7 @@
 (ns omchaya.components.sidebar
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [clojure.string :as string]
+            [goog.string :as gstring]
             [om.core :as om]
             [omchaya.utils :as utils]
             [sablono.core :as html :refer-macros [html]]))
@@ -42,6 +43,32 @@
    [:i.icon-angle.button.right {:style #js {:height "inherit"}}]
    (:full-name user)])
 
+(defn playlist-widget [player-data owner opts]
+  (reify
+    om/IRender
+    (render [_]
+      (html/html
+       (let [comm (get-in opts [:comms :controls])
+             helper (fn [entry]
+                      (let [src (:src entry)
+                            name (-> (:src entry)
+                                     (string/split #"/")
+                                     last
+                                     (string/split #"\?")
+                                     first
+                                     gstring/urlDecode)]
+                        [:li.user
+                         {:title (:src entry)
+                          :key (str (:order entry) src)}
+                         [:a
+                          {:style #js {:cursor "pointer"}
+                           :on-click (comp (constantly false)
+                                           #(put! comm [:playlist-entry-played [src (:selected-channel opts)]]))}
+                          name]]))]
+         [:div.widget-content
+          [:ul.user_list
+           (map helper (sort-by :order (:playlist player-data)))]])))))
+
 (defn sidebar [data owner opts]
   (reify
     om/IRender
@@ -67,15 +94,21 @@
            [:div#widget_widget_0.widget
             [:h5.widget-header
              [:img {:src "/assets/images/people_icon.png"}]
-             "People\n  "]
+             "People"]
             [:div#widget_0.widget-content
              [:ul.user_list
               (map (partial people-entry comm) (vals (select-keys (:users opts) (:users channel))))]]
             [:div.widget-action-bar {:style #js {:display "none"}}]]
+           [:div#widget_widget_1.widget
+            [:h5.widget-header
+             [:img {:src "/assets/images/video_icon.png"}]
+             "Playlist"]
+            (om/build playlist-widget (:player channel) {:opts opts})
+            [:div.widget-action-bar {:style #js {:display "none"}}]]
            [:div#widget_widget_2.widget
             [:h5.widget-header
              [:img {:src "/assets/images/media_icon.png"}]
-             "Media\n  "]
+             "Media"]
             [:div#widget_2.widget-content
              [:ul.file_list
               (map (partial media-entry comm) (:media channel))]]

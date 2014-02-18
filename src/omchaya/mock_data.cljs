@@ -4,17 +4,21 @@
 (def user-emails
   ["sean@bushi.do" "nb@bushi.do" "sacha@bushi.do"])
 
-(defn random-message [channel-id]
-  (let [at (as-> (js/Date.) x
-                 (.getTime x)
-                 (- x (rand-int (* 1000 60 24 60)))
-                 (js/Date. x))]
+(defn random-message [channel-id & [at-now?]]
+  (let [at (if at-now?
+             (js/Date.)
+             (as-> (js/Date.) x
+                   (.getTime x)
+                   (- x (rand-int (* 1000 60 24 60)))
+                   (js/Date. x)))]
     {:created_at at
      :author (rand-nth user-emails)
      :content (rand-nth ["deployed with ruby on...?"
                          "ha, dat stuff works"
                          "Random content"
-                         "@sgrove how're you?"
+                         "Heh, :+1:"
+                         "Wow, :exclamation:"
+                         "@sgrove Ok, let's do this!"
                          "@sacha Be careful with that"
                          "Hey @nb - I got you something nice... (not really)"])
      :channel-id channel-id}))
@@ -45,12 +49,22 @@
                                                    #(random-message (utils/safe-sel title)))))
      :media (vec
              (take (inc (rand-int 10))
-                   (shuffle media)))}))
+                   (shuffle media)))
+     :sfx {:source-url nil}
+     :player {:source-url "https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"
+              :state :stopped
+              :playlist (take 2 (shuffle [{:order 3 :src "https://dl.dropboxusercontent.com/u/412963/11%20Charlotte.mp3"}
+                                          {:order 2 :src "https://dl.dropboxusercontent.com/u/412963/Golf%20Clap.mp3"}
+                                          {:order 0 :src "https://dl.dropboxusercontent.com/u/412963/cheer.mp3"}
+                                          {:order 1 :src "https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"}
+                                          ]))}}))
 
 (defn initial-state [comms]
   (let [channels (as-> (map (comp (juxt :id identity) random-channel) (range 2 8)) ch
                        (into {} ch))]
-    {:settings {:message-limit 3
+    {:audio {:volume 100
+             :muted true}
+     :settings {:message-limit 50
                 :forms {:search {:focused false}
                         :user-message {:focused false}}
                 :menus {:user-menu {:open false}}}
