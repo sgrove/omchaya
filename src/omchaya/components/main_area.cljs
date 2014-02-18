@@ -36,16 +36,21 @@
            [:div.media-entry
             media])
          (remove string? (-> (string/split (:content activity) delimiter-re)
-                             image-embed
-                             youtube-embed
-                             vimeo-embed)))]))
+                             plugins/image-embed
+                             plugins/youtube-embed
+                             plugins/vimeo-embed)))]))
 
-(defn main-area [channel owner opts]
+(defn main-area [{:keys [channel search-filter]} owner opts]
   (reify
     om/IRender
     (render [this]
       (html/html
-       (let [comm (get-in opts [:comms :controls])]
+       (let [comm (get-in opts [:comms :controls])
+             re-filter (when search-filter (js/RegExp. search-filter "ig"))
+             activities (:activities channel)
+             filtered-activities (if re-filter
+                                   (filter #(.match (:content %) re-filter) activities)
+                                   activities)]
          [:article.main-area
           [:header.header
            [:a.nav-toggle.button.left {:href "#"} [:i.icon-comments]]
@@ -69,7 +74,8 @@
                                      (:users opts)
                                      (:settings opts)
                                      author
-                                     %)) (:activities channel))]
+                                     %))
+                  filtered-activities)]
             [:div.chatbox [:textarea.chat-input
                            (merge
                             {:on-focus #(put! comm [:user-message-focused])

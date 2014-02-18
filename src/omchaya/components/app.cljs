@@ -25,7 +25,8 @@
                             :users (:users app)
                             :current-user-email (:current-user-email app)
                             :selected-channel (:selected-channel app)}})
-          (om/build main-area/main-area selected-channel {:opts {:comms (:comms opts)
+          (om/build main-area/main-area {:channel selected-channel
+                                         :search-filter (get-in app [:settings :forms :search :value])} {:opts {:comms (:comms opts)
                                                                  :users (:users app)
                                                                  :current-user-email (:current-user-email app)
                                                                  :input-focused? (get-in app [:settings :forms :user-message :focused])
