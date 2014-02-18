@@ -24,8 +24,8 @@
 
 (defmethod post-api-event! :channel-activity-received
   [target message activity previous-state current-state]
+  (commands/handle-maybe-command target activity current-state)
   (when (= (:channel-id activity) (:selected-channel current-state))
     (js/setTimeout #(imp-ui/scroll-to-latest-message-when-appropriate! target (:channel-id activity)) 35)
     (when (or (:live? activity) true)
-      (commands/handle-maybe-command target activity current-state)
       (notify-if-mentioned! activity current-state))))

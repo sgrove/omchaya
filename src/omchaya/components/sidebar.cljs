@@ -43,31 +43,34 @@
    [:i.icon-angle.button.right {:style #js {:height "inherit"}}]
    (:full-name user)])
 
+(defn playlist-entry [comm opts entry]
+  (let [src (:src entry)
+        name (-> (:src entry)
+                 (string/split #"/")
+                 last
+                 (string/split #"\?")
+                 first
+                 gstring/urlDecode)]
+    [:li.user
+     (merge {:title (:src entry)
+             :key (str (:order entry) src)}
+            (when (= (:order entry) (get-in opts [:channels (:selected-channel opts) :player :playing-order]))
+              {:style #js {:background-color "#ccc"}}))
+     [:a
+      {:style #js {:cursor "pointer"}
+       :on-click (comp (constantly false)
+                       #(put! comm [:playlist-entry-played [(:order entry) (:selected-channel opts)]]))}
+      (:order entry) ". " name]]))
+
 (defn playlist-widget [player-data owner opts]
   (reify
     om/IRender
     (render [_]
       (html/html
-       (let [comm (get-in opts [:comms :controls])
-             helper (fn [entry]
-                      (let [src (:src entry)
-                            name (-> (:src entry)
-                                     (string/split #"/")
-                                     last
-                                     (string/split #"\?")
-                                     first
-                                     gstring/urlDecode)]
-                        [:li.user
-                         {:title (:src entry)
-                          :key (str (:order entry) src)}
-                         [:a
-                          {:style #js {:cursor "pointer"}
-                           :on-click (comp (constantly false)
-                                           #(put! comm [:playlist-entry-played [src (:selected-channel opts)]]))}
-                          name]]))]
+       (let [comm (get-in opts [:comms :controls])]
          [:div.widget-content
           [:ul.user_list
-           (map helper (sort-by :order (:playlist player-data)))]])))))
+           (map (partial playlist-entry comm opts) (sort-by :order (:playlist player-data)))]])))))
 
 (defn sidebar [data owner opts]
   (reify
@@ -106,7 +109,19 @@
            [:div#widget_widget_1.widget
             [:h5.widget-header
              [:img {:src "/assets/images/video_icon.png"}]
-             "Playlist"]
+             "Playlist  " (if (= (get-in channel [:player :state]) :playing)
+                            [:i.fa.fa-pause
+                             {:style #js {:cursor "pointer"}
+                              :on-click #(put! comm [:audio-player-stopped (:selected-channel opts)])}]
+                            [:i.fa.fa-play
+                             {:style #js {:cursor "pointer"}
+                              :on-click #(put! comm [:audio-player-started (:selected-channel opts)])}])
+             (when (and false ;; React needs some audio-tag
+                                         ;; love before we can
+                                         ;; reliably detect this
+                        (get-in channel [:player :loading]))
+                          [:i.icon-spinner.icon-spin.icon-2x
+                           {:style #js {:float "right"}}])]
             (om/build playlist-widget (:player channel) {:opts opts})
             [:div.widget-action-bar {:style #js {:display "none"}}]]
            [:div#widget_widget_2.widget

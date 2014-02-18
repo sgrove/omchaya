@@ -18,13 +18,14 @@
                                             {:audio-settings (:audio app)
                                              :player (:player channel)
                                              :sfx (:sfx channel)
-                                             :id channel-id}) (:channels app)))
+                                             :id channel-id}) (:channels app)) {:opts {:comms (:comms app)}})
           (om/build sidebar/sidebar {:channel selected-channel
                                      :settings (:settings app)}
                     {:opts {:comms (:comms opts)
                             :users (:users app)
                             :current-user-email (:current-user-email app)
-                            :selected-channel (:selected-channel app)}})
+                            :selected-channel (:selected-channel app)
+                            :channels (:channels app)}})
           (om/build main-area/main-area {:channel selected-channel
                                          :search-filter (get-in app [:settings :forms :search :value])} {:opts {:comms (:comms opts)
                                                                  :users (:users app)

@@ -80,14 +80,16 @@
 (defmethod control-event :playlist-entry-queued
   [target message args state]
   (let [[channel-id url] args]
-    (update-in state [:channels (:selected-channel state) :player :playlist]
+    (update-in state [:channels channel-id :player :playlist]
                (fn [playlist]
                  (conj playlist {:order (count playlist)
                                  :src url})))))
 
 (defmethod control-event :playlist-entry-played
-  [target message src state]
-  state)
+  [target message [order channel-id] state]
+  (-> state
+      (assoc-in [:channels channel-id :player :playing-order] order)
+      (assoc-in [:channels channel-id :player :loading] true)))
 
 (defmethod control-event :user-message-submitted
   [target message args state]
@@ -121,3 +123,7 @@
   (-> state
       (assoc-in [:settings :menus :user-menu :open] false)
       (assoc-in [:current-user-email] nil)))
+
+(defmethod control-event :audio-source-loaded
+  [target message channel-id state]
+  (assoc-in state [:channels channel-id :player :loading] false))

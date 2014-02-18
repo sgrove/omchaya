@@ -4,7 +4,8 @@
             [dommy.core :as dommy]
             [omchaya.api.mock :as api]
             [omchaya.commands :as commands]
-            [omchaya.ui :as imp-ui])
+            [omchaya.ui :as imp-ui]
+            [omchaya.useful :as useful :refer [ffilter]])
   (:use-macros [dommy.macros :only [sel sel1]]))
 
 (def local-only-commands
@@ -28,9 +29,11 @@
   (print "notify current user they were mentioned"))
 
 (defmethod post-control-event! :playlist-entry-played
-  [target message args previous-state current-state]
-  (let [controls-ch (get-in current-state [:comms :controls])]
-    (put! controls-ch [:audio-player-source-updated args])))
+  [target message [order channel-id] previous-state current-state]
+  (let [controls-ch (get-in current-state [:comms :controls])
+        playlist (get-in current-state [:channels channel-id :player :playlist])
+        entry (ffilter #(= (:order %) order) (get-in current-state [:channels channel-id :player :playlist]))]
+    (put! controls-ch [:audio-player-source-updated [(:src entry) channel-id]])))
 
 (defmethod post-control-event! :audio-player-source-updated
   [target message [src channel-id] previous-state current-state]
