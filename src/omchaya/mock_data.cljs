@@ -52,7 +52,7 @@
                    (shuffle media)))
      :sfx {:source-url nil}
      :player {:source-url "https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"
-              :state :stopped
+              :state :playing
               :playlist (take 2 (shuffle [{:order 3 :src "https://dl.dropboxusercontent.com/u/412963/11%20Charlotte.mp3"}
                                           {:order 2 :src "https://dl.dropboxusercontent.com/u/412963/Golf%20Clap.mp3"}
                                           {:order 0 :src "https://dl.dropboxusercontent.com/u/412963/cheer.mp3"}
