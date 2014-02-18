@@ -103,3 +103,20 @@
           (assoc-in [:settings :forms :user-message :value] nil)
           (update-in [:channels (:id channel) :activities] (comp (partial sort-by :created_at) conj) activity)
           (update-in [:channels (:id channel) :activities] vec)))))
+
+(defmethod control-event :settings-opened
+  [target message args state]
+  (assoc-in state [:settings :menus :user-menu :open] false))
+
+(defmethod control-event :help-opened
+  [target message args state]
+  (assoc-in state [:settings :menus :user-menu :open] false))
+
+(defmethod control-event :about-opened
+  [target message args state]
+  (assoc-in state [:settings :menus :user-menu :open] false))
+
+(defmethod control-event :user-logged-out
+  [target message args state]
+  (assoc-in state [:settings :menus :user-menu :open] false)
+  (assoc-in state [:current-user-email] nil))

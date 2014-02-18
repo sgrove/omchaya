@@ -84,3 +84,7 @@
   [target message [activity url] previous-state current-state]
   (let [player (sel1 target [(str ".audio-player.sfx.audio-" (:channel-id activity))])]
     (js/setTimeout #(.play player) 35)))
+
+(defmethod post-control-event! :user-logged-out
+  [target message [activity url] previous-state current-state]
+  (print "Log the user out somehow"))

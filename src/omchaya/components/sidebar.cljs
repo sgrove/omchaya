@@ -82,14 +82,18 @@
            (current-user comm (get-in opts [:users (:current-user-email opts)]))
            [:ul.user-menu
             [:li]
-            [:li [:a {:href "/users/edit"} "Edit Account"]]
+            [:li [:a {:href "#"
+                      :on-click #(put! comm [:settings-opened])} "Edit Account"]]
             [:li
              [:a
               {:rel "nofollow",
-               :data-method "delete",
-               :href "/users/sign_out"}
+               :href "#"
+               :on-click #(put! comm [:user-logged-out])}
               "Logout"]]
-            [:li [:a {:href "/about"} "About Kandan"]]]]
+            [:li [:a {:href "#"
+                      :on-click #(put! comm [:help-opened])} "Help"]]
+            [:li [:a {:href "#"
+                      :on-click #(put! comm [:about-opened])} "About Omchaya"]]]]
           [:div.widgets
            [:div#widget_widget_0.widget
             [:h5.widget-header
