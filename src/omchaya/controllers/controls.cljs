@@ -6,7 +6,7 @@
 
 (defmethod control-event :default
   [target message args state]
-  (print "No control event for" (pr-str message)))
+  state)
 
 (defmethod control-event :current-user-mentioned
   [target message [activity url] state]
