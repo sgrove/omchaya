@@ -7,6 +7,17 @@ A [ClojureScript](https://github.com/clojure/clojurescript) + [Om](https://githu
     git clone https://github.com/sgrove/omchaya.git
     cd omchaya
 
+## Example usage
+
+Omchaya is just for local usage right now. Try a couple of commands:
+
+  @mention-a-name
+  /play <url to an audio-tag-compatible source (mp3, etc.)>
+  rgb(r,g,b)
+  #hheexx or #hex
+  Any youtube/vimeo/img/link will be picked up
+  Basic pastie support is there
+
 ## Running locally
 
     ./run_server.sh
