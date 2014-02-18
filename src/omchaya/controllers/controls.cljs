@@ -27,23 +27,27 @@
 
 (defmethod control-event :search-form-focused
   [target message args state]
-  (update-in state [:settings :forms :search] assoc :focused true))
+  (assoc-in state [:settings :forms :search :focused] true))
 
 (defmethod control-event :search-form-blurred
   [target message args state]
-  (update-in state [:settings :forms :search] assoc :focused false))
+  (assoc-in state [:settings :forms :search :focused] false))
+
+(defmethod control-event :search-form-updated
+  [target message new-value state]
+  (assoc-in state [:settings :forms :search :value] new-value))
 
 (defmethod control-event :user-message-focused
   [target message args state]
-  (update-in state [:settings :forms :user-message] assoc :focused true))
+  (assoc-in state [:settings :forms :user-message :focused] true))
 
 (defmethod control-event :user-message-blurred
   [target message args state]
-  (update-in state [:settings :forms :user-message] assoc :focused false))
+  (assoc-in state [:settings :forms :user-message :focused] false))
 
 (defmethod control-event :user-message-updated
   [target message args state]
-  (update-in state [:settings :forms :user-message] assoc :value args))
+  (assoc-in state [:settings :forms :user-message :value] args))
 
 (defmethod control-event :audio-player-started
   [target message channel-id state]
@@ -96,6 +100,6 @@
                       :author     (:email user)
                       :created_at (js/Date.)}]
       (-> state
-          (update-in [:settings :forms :user-message] assoc :value nil)
+          (assoc-in [:settings :forms :user-message :value] nil)
           (update-in [:channels (:id channel) :activities] (comp (partial sort-by :created_at) conj) activity)
           (update-in [:channels (:id channel) :activities] vec)))))
