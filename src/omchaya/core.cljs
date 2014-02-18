@@ -1,8 +1,10 @@
 (ns omchaya.core
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [dommy.core :as dommy]
+            [omchaya.api.mock :as mock-api]
             [omchaya.components.sandbox :as sandbox]
             [omchaya.datetime :as dt]
+            [omchaya.mock-data :as mock-data]
             [omchaya.utils :as utils]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true])
@@ -17,77 +19,9 @@
 (def api-ch
   (chan))
 
-(def user-emails
-  ["sean@bushi.do" "nb@bushi.do" "sacha@bushi.do"])
-
-(defn random-message [channel-id]
-  (let [at (as-> (js/Date.) x
-                 (.getTime x)
-                 (- x (rand-int (* 1000 60 24 60)))
-                 (js/Date. x))]
-    {:created_at at
-     :author (rand-nth user-emails)
-     :content (rand-nth ["deployed with ruby on...?"
-                         "ha, dat stuff works"
-                         "Random content"
-                         "@sgrove how're you?"
-                         "@sacha Be careful with that"
-                         "Hey @nb - I got you something nice... (not really)"])
-     :channel-id channel-id}))
-
-(defn random-title []
-  (rand-nth ["Background"
-             "A dark place"
-             "한국어"
-             "Zork lovers"]))
-
-(def media
-  [{:src "/system/attachments/files/000/000/098/original/call-centre-woman.jpg?1392265218"
-    :name "call-centre-woman.jpg"}
-   {:src "/system/attachments/files/000/000/098/original/design.pdf?1392265218"
-    :name "design.pdf"}
-   {:src "/system/attachments/files/000/000/098/original/example.mp3?1392265218"
-    :name "example.mp3"}])
-
-(defn random-channel [order & [title]]
-  (let [title (or title (random-title))]
-    {:id (utils/safe-sel title)
-     :order order
-     :title title
-     :selected false
-     :users (take (inc (rand-int (count user-emails))) (shuffle user-emails))
-     :activities (vec
-                  (sort-by :created_at (repeatedly (inc (rand-int 10))
-                                                   #(random-message (utils/safe-sel title)))))
-     :media (vec
-             (take (inc (rand-int 10))
-                   (shuffle media)))}))
-
-(defn initial-state []
-  (let [channels (as-> (map (comp (juxt :id identity) random-channel) (range 2 8)) ch
-                       (into {} ch))]
-    {:settings {:forms {:search {:focused false}
-                        :user-message {:focused false}}
-                :menus {:user-menu {:open false}}}
-     :selected-channel "lobby"
-     :channels (as-> channels ch
-                     (assoc ch "lobby" (random-channel 1 "Lobby"))
-                     (update-in ch ["lobby"] assoc :selected true))
-     :users {"sean@bushi.do" {:full-name "Sean Grove"
-                              :email "sean@bushi.do"
-                              :username "sgrove"}
-             "nb@bushi.do" {:full-name "Nathan Broadbent"
-                            :email "nb@bushi.do"
-                            :username "nb"}
-             "sacha@bushi.do" {:full-name "Sacha Greif"
-                               :email "sacha@bushi.do"
-                               :username "sacha"}}
-     :current-user-email "sean@bushi.do"
-     :comms {:controls controls-ch
-             :api api-ch}}))
-
 (def app-state
-  (atom (initial-state)))
+  (atom (mock-data/initial-state {:controls controls-ch
+                                  :api api-ch})))
 
 (defn scroll-to-latest-message! [target channel-id]
   (let [channel (sel1 target (str "#channels-" channel-id))
@@ -110,14 +44,21 @@
         (when (> channel-view-bottom (.-offsetTop second-latest-el))
           (set! (.-scrollTop channel-el) (.-offsetTop latest-el)))))))
 
+(defn append-activity-to-channel [state channel-id activity]
+  (update-in state [:channels channel-id :activities] (comp (partial sort-by :created_at) conj) activity))
+
+(defn drop-old-activity-from-channel [state channel-id message-limit]
+  (update-in state [:channels channel-id :activities] (partial take-last message-limit)))
+
 (defmulti api-event
   (fn [target message args state] message))
 
 (defmethod api-event :channel-activity-received
   [target message activity state]
-  (when (= (:channel-id activity) (:selected-channel state))
-    (js/setTimeout #(scroll-to-latest-message-when-appropriate! target (:channel-id activity)) 35))
-  (update-in state [:channels (:channel-id activity) :activities] (comp (partial sort-by :created_at) conj) activity))
+  (let [message-limit (get-in state [:settings :message-limit])]
+    (-> state
+        (append-activity-to-channel (:channel-id activity) activity)
+        (drop-old-activity-from-channel (:channel-id activity) message-limit))))
 
 (defmulti control-event
   (fn [target message args state] message))
@@ -130,7 +71,6 @@
   [target message args state]
   (let [old-channel    (get-in state [:channels (:selected-channel state)])
         new-channel    (get-in state [:channels args])]
-    (js/setTimeout #(scroll-to-latest-message! target (:id new-channel)) 35)
     (-> state
         (assoc :selected-channel args)
         (assoc-in [:channels (:id old-channel) :selected] false)
@@ -163,18 +103,46 @@
     (do
       (when-let [input (sel1 target [:.chat-input])]
         (dommy/set-value! input ""))
-      
       (let [content    (get-in state [:settings :forms :user-message :value])
             user       (get-in state [:users (:current-user-email state)])
             channel    (get-in state [:channels (:selected-channel state)])
             activity   {:content content
                         :created_at (js/Date.)
                         :author (:email user)}]
-        (js/setTimeout #(scroll-to-latest-message-when-appropriate! target (:id channel)) 35)
         (-> state
             (update-in [:settings :forms :user-message] assoc :value nil)
             (update-in [:channels (:id channel) :activities] (comp (partial sort-by :created_at) conj) activity)
             (update-in [:channels (:id channel) :activities] vec))))))
+
+(defmulti post-control-event!
+  (fn [target message args previous-state current-state] message))
+
+(defmethod post-control-event! :default
+  [target message args previous-state current-state]
+  (print "No post-control for: " message))
+
+(defmethod post-control-event! :tab-selected
+  [target message args previous-state current-state]
+  (let [old-channel    (get-in current-state [:channels (:selected-channel current-state)])
+        new-channel    (get-in current-state [:channels args])]
+    (js/setTimeout #(scroll-to-latest-message! target (:id new-channel)) 35)))
+
+(defmethod post-control-event! :user-message-submitted
+  [target message args previous-state current-state]
+  (let [channel (get-in current-state [:channels (:selected-channel current-state)])]
+    (js/setTimeout #(scroll-to-latest-message-when-appropriate! target (:id channel)) 35)))
+
+(defmulti post-api-event!
+  (fn [target message previous-state current-state] message))
+
+(defmethod post-api-event! :default
+  [target message previous-state current-state]
+  (print "No post-api handler for: " message))
+
+(defmethod post-api-event! :channel-activity-received
+  [target message activity previous-state current-state]
+  (when (= (:channel-id activity) (:selected-channel current-state))
+    (js/setTimeout #(scroll-to-latest-message-when-appropriate! target (:channel-id activity)) 35)))
 
 (defn main [state]
   (let [comms (:comms @state)
@@ -187,10 +155,17 @@
     (go (while true
           (alt!
            (:controls comms) ([v]
-                                (swap! state (partial control-event target (first v) (second v))))
+                                (let [previous-state @state]
+                                  (swap! state (partial control-event target (first v) (second v)))
+                                  (post-control-event! target (first v) (second v) previous-state @state)))
            (:api comms) ([v]
-                           (swap! state (partial api-event target (first v) (second v)))))))))
+                           (let [previous-state @state]
+                             (swap! state (partial api-event target (first v) (second v)))
+                             (post-api-event! target (first v) (second v) previous-state @state))))))))
 
-(main app-state)
+(defn setup! []
+  (main app-state))
 
-(js/setInterval #(put! (get-in @app-state [:comms :api]) [:channel-activity-received (random-message (rand-nth (keys (:channels @app-state))))]) 1000)
+(set! (.-onload js/window) setup!)
+
+(js/setInterval #(mock-api/random-message (get-in @app-state [:comms :api]) (rand-nth (keys (:channels @app-state)))) 100)
