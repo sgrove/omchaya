@@ -19,14 +19,14 @@
         (html/html
          [:div
           (om/build sidebar/sidebar {:channel selected-channel
-                              :settings (:settings app)}
+                                     :settings (:settings app)}
                     {:opts {:comms (:comms opts)
                             :users (:users app)
                             :current-user-email (:current-user-email app)}})
           (om/build main-area/main-area selected-channel {:opts {:comms (:comms opts)
-                                                       :users (:users app)
-                                                       :current-user-email (:current-user-email app)
-                                                       :input-focused? (get-in app [:settings :forms :user-message :focused])
-                                                       :input-value (get-in app [:settings :forms :user-message :value])}})
+                                                                 :users (:users app)
+                                                                 :current-user-email (:current-user-email app)
+                                                                 :input-focused? (get-in app [:settings :forms :user-message :focused])
+                                                                 :input-value (get-in app [:settings :forms :user-message :value])}})
           (om/build navbar/navbar (select-keys app [:channels :settings]) {:opts {:comms (:comms opts)}})
           [:div#at-view.at-view [:ul#at-view-ul]]])))))

@@ -34,5 +34,5 @@
 
 (defn gravatar-for [email]
   [:img.avatar
-     {:src
-      (email->gravatar-url email)}])
+   {:src
+    (email->gravatar-url email)}])

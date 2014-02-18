@@ -95,7 +95,7 @@
 (def day-in-ms
   (* 1000 3600 24))
 
-; Units of time in seconds
+                                        ; Units of time in seconds
 (def minute
   60)
 
