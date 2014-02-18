@@ -2,7 +2,7 @@
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [dommy.core :as dommy]
             [omchaya.api.mock :as mock-api]
-            [omchaya.components.sandbox :as sandbox]
+            [omchaya.components.app :as app]
             [omchaya.datetime :as dt]
             [omchaya.mock-data :as mock-data]
             [omchaya.utils :as utils]
@@ -148,7 +148,7 @@
   (let [comms (:comms @state)
         target (. js/document (getElementById "app"))]
     (om/root
-     sandbox/sandbox
+     app/app
      state
      {:target target
       :opts {:comms comms}})

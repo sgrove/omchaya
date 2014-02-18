@@ -1,6 +1,8 @@
 (ns omchaya.utils
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [clojure.string :as string]
+            [goog.crypt :as crypt]
+            [goog.crypt.Md5]
             [goog.events :as ge]
             [goog.Uri]
             [goog.net.EventType :as gevt]
@@ -22,3 +24,15 @@
 
 (defn safe-sel [s]
   (str (string/replace (string/lower-case s) #"[\W]" "-")))
+
+(defn email->gravatar-url [email]
+  (let [email (or email "unknown-email@unknown-domain.com")
+        container (doto (goog.crypt.Md5.)
+                    (.update email))
+        hash (crypt/byteArrayToHex (.digest container))]
+    (str "http://gravatar.com/avatar/" hash "?s=30&d=identicon")))
+
+(defn gravatar-for [email]
+  [:img.avatar
+     {:src
+      (email->gravatar-url email)}])
