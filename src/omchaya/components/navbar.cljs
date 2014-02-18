@@ -24,7 +24,8 @@
            [:input.query {:name "query",
                           :type "text"
                           :on-focus #(put! comm [:search-form-focused])
-                          :on-blur #(put! comm [:search-form-blurred])}]
+                          :on-blur #(put! comm [:search-form-blurred])
+                          :on-key-up #(put! comm [:search-form-updated (.. % -target -value)])}]
            [:input.submit {:value "Search",
                            :type "submit"
                            :on-submit (constantly false)}]]
