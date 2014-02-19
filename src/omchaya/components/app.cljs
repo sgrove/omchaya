@@ -20,7 +20,8 @@
                                              :sfx (:sfx channel)
                                              :id channel-id}) (:channels app)) {:opts {:comms (:comms app)}})
           (om/build sidebar/sidebar {:channel selected-channel
-                                     :settings (:settings app)}
+                                     :settings (:settings app)
+                                     :search-filter (get-in app [:settings :forms :search :value])}
                     {:opts {:comms (:comms opts)
                             :users (:users app)
                             :current-user-email (:current-user-email app)
