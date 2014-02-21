@@ -19,10 +19,18 @@
   :source-paths ["src"]
 
   :cljsbuild { 
-    :builds [{:id "omchaya"
+    :builds [{:id "dev"
               :source-paths ["src"]
-              :compiler {
-                :output-to "omchaya.js"
-                :output-dir "out"
-                :optimizations :none
-                :source-map true}}]})
+              :compiler {:output-to "omchaya.dev.js"
+                         :output-dir "out/dev"
+                         :optimizations :none
+                         :source-map true}}
+             {:id "prod"
+              :source-paths ["src"]
+              :compiler {:output-to "omchaya.prod.js"
+                         :output-dir "out/prod"
+                         :optimizations :advanced
+                         :source-map "omchaya.prod.js.map"
+                         :pretty-print false
+                         :preamble ["react/react.min.js"]
+                         :externs ["react/externs/react.js"]}}]})

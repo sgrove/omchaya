@@ -121,4 +121,3 @@
                        :else         {:divisor year   :unit "year"   })]
     (let [count (.round js/Math (/ ago (:divisor interval)))]
       (str count " "  (:unit interval) (when-not (= 1 count) "s")))))
-
