@@ -28,3 +28,55 @@
    padding: 10px;
    background-color: rgba(0,0,0,0.5);
 }
+
+/* Replay player styles */
+.history-player {
+   border: 2px solid black;
+}
+
+.history-player {
+   position: fixed;
+   top: 16px;
+   left: 16px;
+   width: 30%;
+   opacity: 0.8;
+   height: 100%;
+   z-index: 999999;
+   background-color: white;
+   overflow: hidden;
+}
+
+.history-player .replay-step {
+   max-height: 30px;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+
+.history-player .active {
+   background-color: #F55;
+   color: white;
+   font-weight: bold;
+}
+
+.history-player .playlist-steps {
+   height: 100%;
+   overflow: scroll;
+}
+
+.history-player .playlist-entries {
+   height: 100%;
+   overflow: scroll;
+}
+
+.history-player .playlist-entry {
+   border-bottom: 1px dashed #999;
+}
+
+.history-player .playlist-entry:hover {
+   background-color: yellow;
+}
+
+.history-player #wrapper {
+   margin-top: 60px;
+}

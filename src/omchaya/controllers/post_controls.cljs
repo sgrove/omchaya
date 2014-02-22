@@ -4,6 +4,7 @@
             [dommy.core :as dommy]
             [omchaya.api.mock :as api]
             [omchaya.commands :as commands]
+            [omchaya.replay :as replay]
             [omchaya.ui :as imp-ui]
             [omchaya.useful :as useful :refer [ffilter]])
   (:use-macros [dommy.macros :only [sel sel1]]))
@@ -91,3 +92,12 @@
 (defmethod post-control-event! :user-logged-out
   [target message [activity url] previous-state current-state]
   (print "Log the user out somehow"))
+
+(defmethod post-control-event! :history-player-opened
+  [target message [activity url] previous-state current-state]
+  (when-let [player-el (sel1 :div#player-container)]
+    (replay/install-player! player-el (:api-key current-state)
+                            (replay/initial-player-state (:comms current-state)
+                                                         {:player-control replay/player-control-ch
+                                                          :player-drag    replay/player-drag-ch
+                                                          :api replay/api-ch}))))
