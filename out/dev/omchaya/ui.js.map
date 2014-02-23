@@ -1,0 +1,14 @@
+{"version":3,
+ "file":"/Users/sgrove/code/clojure/omchaya/out/dev/omchaya/ui.js",
+ "sources":["ui.cljs"],
+ "lineCount":64,
+ "mappings":
+ ";AAAA;;;;;;;;;;;;;;;;;;;;;;;;;;AAiBA,4CAAA,4DAAA,xGAAMA,qFAA2BC,OAAOC,YACtC,IAAMC,UAAQ,AAAA,AAAAC,8DAAA,AAAAC,tBAAMJ,oDAAO,eAAA,4BAAkBC,4BACvCI,aAAW,iBAAAC,4BAAA,AAAA,oBAAAA,5BAAKJ;CAAQ,OAAAK,iCAAA,AAAA,AAAAJ,wEAAA,hCAAKD;;CAAlBI;;uDADjB,9CAEME,SAAO,AAACC,yBAAKJ,YACjB,oBAAM,iBAAAC,4BAAA,AAAA,oBAAAA,5BAAKJ;CAAQM;;CAAbF;;;CAAN,AACE,OAAM,AAAaJ,oBAAS,AAAaM;;CAD3C;;;AAGJ;;;;6DAAA,6EAAA,1IAAME,uHAGHV,OAAOC,YACR,sdAAA,ldAAMU,aAAW,AAAA,AAAAR,8DAAA,AAAAC,tBAAMJ,oDAAO,eAAA,4BAAkBC,4BAC1CW,iBAAe,AAAAL,iCAAA,AAAA,AAAAJ,2EAAA,nCAAKQ,oDACpBE,mBAAiB,AAACJ,yBAAK,AAACK,8BAAUF,qBAClCG,YAAW,AAACN,yBAAKG,gBACrB,oBAAM,iBAAAN,+BAAA,AAAA,oBAAAA,/BAAKK;CAAWE;;CAAhBP;;;CAAN,AACE,2EAAA,vEAAMU,sBAAoB,CAAG,AAAaL,uBACb,AAAgBA,yBAC3C,GAAM,CAAGK,sBAAoB,AAAaH;CAA1C,AACE,OAAM,AAAaF,uBAAY,AAAaI;;CAD9C;;;CAHJ",
+ "names":
+ ["omchaya.ui/scroll-to-latest-message!", "target", "channel-id",
+  "channel", "dommy.template/->node-like", "dommy.core/selector",
+  "activities", "and__3391__auto__", "dommy.utils/->Array", "latest",
+  "cljs.core/last",
+  "omchaya.ui/scroll-to-latest-message-when-appropriate!",
+  "channel-el", "activities-els", "second-latest-el",
+  "cljs.core/drop-last", "latest-el", "channel-view-bottom"]}

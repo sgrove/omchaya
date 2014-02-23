@@ -1,0 +1,11 @@
+{"version":3,
+ "file":"/Users/sgrove/code/clojure/omchaya/out/omchaya/api/mock.js",
+ "sources":["mock.cljs"],
+ "lineCount":14,
+ "mappings":
+ ";AAAA;;;;;;;AAKA,kCAAA,yCAAA,3EAAMA,2DAAgBC,OAAOC,SAC3B,kDAAA,mFAAA,9HAACC,oCAAKF,yLAAmC,mDAAA,nDAACG,2CAAyBF;;AAErE,2CAAA,mDAAA,9FAAMG,6EAAoBC,QAAQC,SAChC,iCAAA,1BAACC",
+ "names":
+ ["omchaya.api.mock/random-message", "api-ch", "channel",
+  "cljs.core.async/put!", "omchaya.mock-data/random-message",
+  "omchaya.api.mock/send-user-message!", "api-key", "message",
+  "cljs.core/print"]}
