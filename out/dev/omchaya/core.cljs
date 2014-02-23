@@ -61,8 +61,4 @@
 (defn ^:export remove-channel! [channel-id]
   (put! (get-in @app-state [:comms :controls]) [:channel-remotely-destroyed channel-id]))
 
-<<<<<<< HEAD
-(js/setInterval #(api/random-message (get-in @app-state [:comms :api]) (rand-nth (keys (:channels @app-state)))) 1500)
-=======
 (js/setInterval #(api/random-message (get-in @app-state [:comms :api]) (rand-nth (keys (:channels @app-state)))) 250)
->>>>>>> master

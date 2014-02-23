@@ -230,4 +230,4 @@ omchaya.core.remove_channel_BANG_ = (function remove_channel_BANG_(channel_id){r
 });
 goog.exportSymbol('omchaya.core.remove_channel_BANG_', omchaya.core.remove_channel_BANG_);
 setInterval((function (){return omchaya.api.mock.random_message(cljs.core.get_in.cljs$core$IFn$_invoke$arity$2(cljs.core.deref(omchaya.core.app_state),new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs.core.constant$keyword$370,cljs.core.constant$keyword$533], null)),cljs.core.rand_nth(cljs.core.keys(cljs.core.constant$keyword$368.cljs$core$IFn$_invoke$arity$1(cljs.core.deref(omchaya.core.app_state)))));
-}),1500);
+}),250);
