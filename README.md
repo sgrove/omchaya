@@ -18,6 +18,14 @@ Omchaya is just for local usage right now. Try a couple of commands:
     Any youtube/vimeo/img/link will be picked up
     Basic pastie support is there
 
+### I don't have Clojure, but I still want to see it!
+
+Use the demo branch:
+
+    git checkout demo
+    ./run_server.sh
+    open http://localhost:9000/dev.html
+
 ## Running locally
 
     ./run_server.sh
@@ -33,4 +41,4 @@ Start the auto recompiler for the CLJS code:
 Serve the assets:
 
     python -m SimpleHTTPServer 9000
-    open http://localhost:9000/
+    open http://localhost:9000/dev.html
