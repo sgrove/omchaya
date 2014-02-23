@@ -20,7 +20,6 @@
   [target message args state]
   (let [old-channel    (get-in state [:channels (:selected-channel state)])
         new-channel    (get-in state [:channels args])]
-    (print "Switching to tab....")
     (-> state
         (assoc :selected-channel args)
         (assoc-in [:channels (:id old-channel) :selected] false)
