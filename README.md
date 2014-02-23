@@ -23,12 +23,12 @@ Omchaya is just for local usage right now. Try a couple of commands:
 Use the demo branch:
 
     git checkout demo
-    ./run_server.sh
+    scripts/run_server.sh
     open http://localhost:9000/dev.html
 
 ## Running locally
 
-    ./run_server.sh
+    scripts/run_server.sh
 
 This will compile the CLJS code to JS once and start the server hosting the assets.
 
