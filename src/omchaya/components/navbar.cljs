@@ -8,6 +8,7 @@
 (defn tab [comm channel]
   (let [id (:id channel)]
     [:li.protected {:key (:id channel)
+                    :on-click #(put! comm [:tab-selected id])
                     :class (str (utils/safe-sel (:id channel)) (when (:selected channel) " active"))}
      [:a.show_channel
       {:on-click (comp (constantly false)
@@ -25,17 +26,22 @@
              settings (:settings data)]
          [:nav.nav {:class (when (get-in settings [:forms :search :focused]) "search-focus")}
           [:form.search
-           {:action "/search",
+           {:action "/search"
             :method "get"
             :on-submit (constantly false)}
-           [:input.query {:name "query",
+           [:input.query {:name "query"
                           :type "text"
-                          :on-focus #(put! comm [:search-form-focused])
-                          :on-blur #(put! comm [:search-form-blurred])
+                          :on-focus  #(put! comm [:search-form-focused])
+                          :on-blur   #(put! comm [:search-form-blurred])
                           :on-key-up #(put! comm [:search-form-updated (.. % -target -value)])}]
-           [:input.submit {:value "Search",
+           [:input.submit {:value "Search"
                            :type "submit"}]]
           [:ul#channel_nav
            (map (partial tab comm) (sort-by :order (vals (:channels data))))
-           [:li {:key "new-tab"} [:a#create_channel {:href "#"
-                                                     :on-click #(put! comm [:create-channel-menu-opened])} [:strong " + "]]]]])))))
+           [:li {:key "new-tab"
+                 :on-click #(put! comm [:create-channel-menu-opened])}
+            [:a#create_channel
+             {:href "#"
+              :on-click (comp (constantly false)
+                              #(put! comm [:create-channel-menu-opened]))}
+             [:strong " + "]]]]])))))
