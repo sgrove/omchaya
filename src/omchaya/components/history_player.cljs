@@ -23,13 +23,13 @@
 (defmethod player-step 1
   [format-version active-step-number comm step-number step]
   [:div.replay-step {:className (when (= active-step-number step-number) "active")
-                     :onClick #(put! comm [:step-selected step-number])
+                     :on-click #(put! comm [:step-selected step-number])
                      :style #js {:cursor "pointer"}}
    (pr-str step)])
 
 (defn playlist-entry [comm replay-number replay]
   [:div.playlist-entry
-   {:onClick #(put! comm [:replay-selected replay-number])
+   {:on-click #(put! comm [:replay-selected replay-number])
     :style #js {:cursor "pointer"}}
    (or (:name replay) "No name for recording")])
 
@@ -81,7 +81,7 @@
             "[History Player]"]]
           [:div.row
            [:div.col-lg-4
-            [:button {:onClick (if (= (:state app) :playing)
+            [:button {:on-click (if (= (:state app) :playing)
                                  #(put! comm [:player-stopped])
                                  #(put! comm [:player-started]))}
              (if (= (:state app) :playing)

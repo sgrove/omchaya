@@ -20,6 +20,7 @@
   [target message args state]
   (let [old-channel    (get-in state [:channels (:selected-channel state)])
         new-channel    (get-in state [:channels args])]
+    (print "Switching to tab....")
     (-> state
         (assoc :selected-channel args)
         (assoc-in [:channels (:id old-channel) :selected] false)
@@ -127,3 +128,15 @@
 (defmethod control-event :audio-source-loaded
   [target message channel-id state]
   (assoc-in state [:channels channel-id :player :loading] false))
+
+(defmethod control-event :channel-destroyed
+  [target message channel-id state]
+  (assoc-in state [:channels channel-id :loading] true))
+
+(defmethod control-event :right-sidebar-toggled
+  [target message channel-id state]
+  (update-in state [:settings :sidebar :right :open] not))
+
+(defmethod control-event :left-sidebar-toggled
+  [target message channel-id state]
+  (update-in state [:settings :sidebar :left :open] not))

@@ -8,3 +8,7 @@
 
 (defn send-user-message! [api-key message]
   (print "Send a message to the server"))
+
+(defn destroy-channel! [api-ch channel-id]
+  (go (<! (async/timeout 2500))
+      (put! api-ch [:channel-remotely-destroyed channel-id])))

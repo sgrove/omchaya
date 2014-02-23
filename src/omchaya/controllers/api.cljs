@@ -16,3 +16,7 @@
     (-> state
         (append-activity-to-channel (:channel-id activity) activity)
         (drop-old-activity-from-channel (:channel-id activity) message-limit))))
+
+(defmethod api-event :channel-remotely-destroyed
+  [target message channel-id state]
+  (update-in state [:channels] dissoc channel-id))

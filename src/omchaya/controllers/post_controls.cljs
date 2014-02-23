@@ -5,8 +5,10 @@
             [omchaya.api.mock :as api]
             [omchaya.commands :as commands]
             [omchaya.replay :as replay]
+            [omchaya.routes :as routes]
             [omchaya.ui :as imp-ui]
-            [omchaya.useful :as useful :refer [ffilter]])
+            [omchaya.useful :as useful :refer [ffilter]]
+            [omchaya.utils :as utils])
   (:use-macros [dommy.macros :only [sel sel1]]))
 
 (def local-only-commands
@@ -45,9 +47,9 @@
       (js/setTimeout #(.play player) 35))))
 
 (defmethod post-control-event! :tab-selected
-  [target message args previous-state current-state]
-  (let [old-channel    (get-in current-state [:channels (:selected-channel current-state)])
-        new-channel    (get-in current-state [:channels args])]
+  [target message channel-id previous-state current-state]
+  (utils/set-window-href! (routes/v1-channel-link {:channel-id channel-id}))
+  (when-let [new-channel (get-in current-state [:channels channel-id])]
     (js/setTimeout #(imp-ui/scroll-to-latest-message! target (:id new-channel)) 35)))
 
 (defmethod post-control-event! :user-message-submitted
@@ -58,7 +60,7 @@
       (dommy/set-value! input ""))
     (js/setTimeout #(imp-ui/scroll-to-latest-message-when-appropriate! target (:id channel)) 35)
     (commands/handle-maybe-command target {:content user-message
-                                  :channel-id (:id channel)} current-state)
+                                           :channel-id (:id channel)} current-state)
     (when (sendable-message? user-message)
       (api/send-user-message! (:api-key current-state) user-message))))
 
@@ -101,3 +103,30 @@
                                                          {:player-control replay/player-control-ch
                                                           :player-drag    replay/player-drag-ch
                                                           :api replay/api-ch}))))
+
+(defmethod post-control-event! :search-field-focused
+  [target message [activity url] previous-state current-state]
+  (when-let [search-field (sel1 [target :input.query])]
+    ;; Really unpleasant, but handles the bug where the input field is rendered blank when re-focused
+    (.setTimeout js/window
+                 #(set! (.-value search-field) (get-in current-state [:settings :forms :search :value]))
+                 20)))
+
+(defmethod post-control-event! :search-focus-key-pressed
+  [target message args previous-state current-state]
+  (when-let [search-field (sel1 [target :input.query])]
+    (.focus search-field)))
+
+(defmethod post-control-event! :search-form-blur-key-pressed
+  [target message args previous-state current-state]
+  (when-let [message-field (sel1 [target :textarea.chat-input])]
+    (.focus message-field)))
+
+(defmethod post-control-event! :user-message-blur-key-pressed
+  [target message args previous-state current-state]
+  (when-let [search-field (sel1 [target :input.query])]
+    (.focus search-field)))
+
+(defmethod post-control-event! :channel-destroyed
+  [target message channel-id previous-state current-state]
+  (api/destroy-channel! (get-in current-state [:comms :api]) channel-id))

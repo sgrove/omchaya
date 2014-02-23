@@ -10,6 +10,7 @@
             [omchaya.controllers.post-api :as api-pcon]
             [omchaya.datetime :as dt]
             [omchaya.mock-data :as mock-data]
+            [omchaya.routes :as routes]
             [omchaya.useful :as useful :refer [ffilter]]
             [omchaya.utils :as utils]
             [om.core :as om :include-macros true]
@@ -31,6 +32,7 @@
 
 (defn main [target state]
   (let [comms (:comms @state)]
+    (routes/define-routes! state (.getElementById js/document "history-container"))
     (om/root
      app/app
      state
@@ -53,7 +55,10 @@
 (set! (.-onload js/window) setup!)
 
 ;; Local dev tooling
-(defn ^:expore send-async-message [ch-name message data]
+(defn ^:export send-async-message [ch-name message data]
   (put! (get-in @app-state [:comms (keyword ch-name)]) [(keyword message) (js->clj data :keywordize-keys true)]))
+
+(defn ^:export remove-channel! [channel-id]
+  (put! (get-in @app-state [:comms :controls]) [:channel-remotely-destroyed channel-id]))
 
 (js/setInterval #(api/random-message (get-in @app-state [:comms :api]) (rand-nth (keys (:channels @app-state)))) 1500)

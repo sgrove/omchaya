@@ -17,7 +17,7 @@
 
 (defn scroll-to-latest-message! [target channel-id]
   (let [channel (sel1 target (str "#channels-" channel-id))
-        activities (sel channel :.activity)
+        activities (and channel (sel channel :.activity))
         latest (last activities)]
     (when (and channel latest)
       (set! (.-scrollTop channel) (.-offsetTop latest)))))

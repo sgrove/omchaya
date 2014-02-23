@@ -148,7 +148,7 @@
       (html/html
        (let [comm (:comm opts)]
          [:div.widget
-          [:h5.widget-header
+          [:h5.widget-header.unselectable
            [:img {:src (:icon opts)}]
            (:title opts)]
           [:div.widget-content

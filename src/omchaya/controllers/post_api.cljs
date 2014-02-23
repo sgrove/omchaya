@@ -20,7 +20,8 @@
 
 (defmethod post-api-event! :default
   [target message previous-state current-state]
-  (print "No post-api handler for: " message))
+  ;(print "No post-api handler for: " message)
+  )
 
 (defmethod post-api-event! :channel-activity-received
   [target message activity previous-state current-state]
@@ -29,3 +30,4 @@
     (js/setTimeout #(imp-ui/scroll-to-latest-message-when-appropriate! target (:channel-id activity)) 35)
     (when (or (:live? activity) true)
       (notify-if-mentioned! activity current-state))))
+

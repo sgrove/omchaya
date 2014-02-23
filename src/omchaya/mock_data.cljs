@@ -38,7 +38,11 @@
              "A dark place"
              "한국어"
              "Zork lovers"
-             "The War Room"]))
+             "The War Room"
+             "Emotional Trance"
+             "8 out of 10 cats"
+             "Was it something I said?"
+             "Example"]))
 
 (def media
   [{:src "/system/attachments/files/000/000/098/original/call-centre-woman.jpg?1392265218"
@@ -69,14 +73,15 @@
               :playlist []}}))
 
 (defn initial-state [comms]
-  (let [channels (as-> (map (comp (juxt :id identity) random-channel) (range 2 8)) ch
-                       (into {} ch))]
+  (let [channels (into {} (map (comp (juxt :id identity) random-channel) (range 2 100)))]
     {:audio {:volume 100
              :muted true}
      :settings {:message-limit 50
                 :forms {:search {:focused false}
                         :user-message {:focused false}}
-                :menus {:user-menu {:open false}}}
+                :menus {:user-menu {:open false}}
+                :sidebar {:left {:open false}
+                          :right {:open false}}}
      :selected-channel "lobby"
      :channels (as-> channels ch
                      (assoc ch "lobby" (random-channel 1 "Lobby"))

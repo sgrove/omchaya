@@ -19,7 +19,8 @@
 
 (defmethod handle-maybe-command :default
   [target activity state]
-  (print "No command for " (pr-str activity)))
+  ;(print "No command for " (pr-str activity))
+  )
 
 (defmethod handle-maybe-command "/play"
   [target activity state]

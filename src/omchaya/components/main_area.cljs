@@ -40,23 +40,48 @@
                              plugins/youtube-embed
                              plugins/vimeo-embed)))]))
 
+
+(defn chatbox [comm opts]
+  [:div.chatbox [:textarea.chat-input
+                 (merge
+                  {:on-focus #(put! comm [:user-message-focused])
+                   :on-blur #(put! comm [:user-message-blurred])
+                   :on-key-up #(if (= (.. % -which) 13)
+                                 (put! comm [:user-message-submitted])
+                                 (put! comm [:user-message-updated (.. % -target -value)]))}
+                  (when-not (:input-focused? opts)
+                    {:value (:input-value opts)}))]
+   [:button.post {:on-click #(put! comm [:user-message-submitted])} "Post"]])
+
+(defn activities-list [filtered-activities opts]
+  (map #(let [author (get-in opts [:users (:author %)])]
+          (activity-entry (:current-user-email opts)
+                          (:users opts)
+                          (:settings opts)
+                          author
+                          %))
+       filtered-activities))
+
 (defn main-area [{:keys [channel search-filter]} owner opts]
   (reify
     om/IRender
     (render [this]
       (html/html
-       (let [comm (get-in opts [:comms :controls])
-             re-filter (when search-filter (js/RegExp. search-filter "ig"))
+       (let [comm       (get-in opts [:comms :controls])
+             re-filter  (when search-filter (js/RegExp. search-filter "ig"))
              activities (:activities channel)
              filtered-activities (if re-filter
                                    (filter #(.match (:content %) re-filter) activities)
                                    activities)]
          [:article.main-area
           [:header.header
-           [:a.nav-toggle.button.left {:href "#"} [:i.icon-comments]]
-           [:a.sidebar-toggle.button.right {:href "#"} [:i.icon-reorder]]
+           [:a.nav-toggle.button.left {:href "#"
+                                       :on-click #(put! comm [:left-sidebar-toggled])} [:i.icon-comments]]
+           [:a.sidebar-toggle.button.right {:href "#"
+                                            :on-click #(put! comm [:right-sidebar-toggled])} [:i.icon-reorder]]
            [:a.logo
-            {:href "/"}
+            {:href "#/"
+             :on-click (constantly false)}
             [:img
              {:src "/assets/images/logo.png",
               :alt "Omchaya"
@@ -69,20 +94,6 @@
                [:div.pagination
                 [:i.icon-spinner.icon-spin.icon-2x]
                 "Loading previous messages"])
-             (map #(let [author (get-in opts [:users (:author %)])]
-                     (activity-entry (:current-user-email opts)
-                                     (:users opts)
-                                     (:settings opts)
-                                     author
-                                     %))
-                  filtered-activities)]
-            [:div.chatbox [:textarea.chat-input
-                           (merge
-                            {:on-focus #(put! comm [:user-message-focused])
-                             :on-blur #(put! comm [:user-message-blurred])
-                             :on-key-up #(if (= (.. % -which) 13)
-                                           (put! comm [:user-message-submitted])
-                                           (put! comm [:user-message-updated (.. % -target -value)]))}
-                            (when-not (:input-focused? opts)
-                              {:value (:input-value opts)}))]
-             [:button.post {:on-click #(put! comm [:user-message-submitted])} "Post"]]]]])))))
+             (activities-list filtered-activities opts)]
+            (chatbox comm opts)]]])))))
+ 

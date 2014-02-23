@@ -115,14 +115,10 @@
 (defn start-player-loop! [player-state player-drag-ch player-control-ch step-delay]
   (let [app-comms (:app-comms @player-state)
         player-comms (:player-comms @player-state)]
-    (print "1!")
     (go
-     (print "2!")
      (with-redefs []
-       (print "3!")
        (print "Stubbed functions for replay, replaying a v1 history")
        (loop []
-         (print "O!")
          (alt!
           player-control-ch ([v]
                                (utils/log "Player control: " (pr-str v))
