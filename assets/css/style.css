@@ -779,6 +779,10 @@ body{background-image:url(/assets/images/page_bg.png);background-repeat:repeat;m
    user-select: none;
 }
 
+.widget-header {
+   cursor: default;
+}
+
 #channel_nav li {
    cursor: pointer;
 }
