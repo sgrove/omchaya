@@ -18,8 +18,6 @@
                  [sablono "0.2.6"]
                  [secretary "1.0.0"]]
 
-  :plugins [[lein-cljsbuild "1.0.2"]]
-
   :source-paths ["src"]
 
   :cljsbuild {:test-commands {"unit-tests" ["runners/phantomjs.js" :runner
