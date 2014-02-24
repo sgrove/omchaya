@@ -96,7 +96,8 @@
            [:div.image-preview
             [:a {:target "_blank"
                  :href piece}
-             [:img.image-embed {:src piece}]]]
+             [:img.image-embed {:src piece}]]
+            [:div.name piece]]
            piece)) activity-pieces))
 
 (defn youtube-embed [activity-pieces]
@@ -108,7 +109,8 @@
                       :height "315"
                       :src (str "http://www.youtube.com/embed/" video-id)
                       :frameBorder 0
-                      :allowFullScreen true}]]
+                      :allowFullScreen true}]
+            [:div.name piece]]
            piece)) activity-pieces))
 
 (defn vimeo-embed [activity-pieces]
@@ -121,5 +123,6 @@
                       :frameBorder 0
                       :webkitAllowFullScreen true
                       :mozAllowFullScreen true
-                      :allowFullScreen true}]]
+                      :allowFullScreen true}]
+            [:div.name piece]]
            piece)) activity-pieces))
