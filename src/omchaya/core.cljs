@@ -56,17 +56,22 @@
     (go (while true
           (alt!
            (:controls comms) ([v]
-                                (mprint "Controls V: " (pr-str v))
+                                (when (:log-channels? utils/initial-player-state)
+                                  (mprint "Controls Verbose: " (pr-str v)))
                                 (let [previous-state @state]
                                   (update-history! history :controls v)
                                   (swap! state (partial controls-con/control-event target (first v) (second v)))
                                   (controls-pcon/post-control-event! target (first v) (second v) previous-state @state)))
            (:api comms) ([v]
+                           (when (:log-channels? utils/initial-player-state)
+                                  (mprint "API Verbose: " (pr-str v)))
                            (let [previous-state @state]
                              (update-history! history :api v)
                              (swap! state (partial api-con/api-event target (first v) (second v)))
                              (api-pcon/post-api-event! target (first v) (second v) previous-state @state)))
-           (async/timeout 30000) (js/console.log (pr-str @history)))))))
+           ;; Capture the current history for playback in the absence
+           ;; of a server to store it
+           (async/timeout 30000) (mprint (pr-str @history)))))))
 
 (defn setup! []
   (main (. js/document (getElementById "app")) app-state)
@@ -88,5 +93,6 @@
 (defn ^:export remove-channel! [channel-id]
   (put! (get-in @app-state [:comms :controls]) [:channel-remotely-destroyed channel-id]))
 
-;;(js/setInterval #(api/random-message (get-in @app-state [:comms :api]) (rand-nth (keys (:channels @app-state)))) 2500)
-
+(comment
+  ;; Uncomment to have random messages send
+  (js/setInterval #(api/random-message (get-in @app-state [:comms :api]) (rand-nth (keys (:channels @app-state)))) 2500))

@@ -6,18 +6,6 @@
             [omchaya.utils :as utils :refer [mprint]])
   (:require-macros [cljs.core.async.macros :as am :refer [go go-loop alt!]]))
 
-(def config
-  {:broadcaster {:name "Faye"
-                 :config {:endpoint "/remote/faye"}}
-   :per-page 30
-   :max-rooms 99
-   :public-site true
-   :avatar-fallback "identicon"
-   :now-threshold 3000
-   :timestamp-refresh-interval 2000
-   :external-avatar-max-size 102400
-   :external-avatar-formats [".jpeg" ".jpg" ".png" "gif"]})
-
 (defmulti process-event!
   (fn [entity-name event-name data]
     [entity-name (-> (:event data)
@@ -27,23 +15,23 @@
 
 (defmethod process-event! [:user :connect]
   [entity-name event-name data]
-  "?")
+  "Placeholder")
 
 (defmethod process-event! [:channel :delete]
   [entity-name event-name data]
-  "?")
+  "Placeholder")
 
 (defmethod process-event! [:channel :create]
   [entity-name event-name data]
-  "?")
+  "Placeholder")
 
 (defmethod process-event! [:channel :update]
   [entity-name event-name data]
-  "?")
+  "Placeholder")
 
 (defmethod process-event! [:attachments :added]
   [entity-name event-name data]
-  "?")
+  "Placeholder")
 
 
 (defn handle-activity [data]
