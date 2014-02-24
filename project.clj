@@ -1,7 +1,9 @@
 (defproject omchaya "0.1.0-SNAPSHOT"
-  :plugins [[hiccup-bridge "1.0.0-SNAPSHOT"]]
-  :description "FIXME: write this!"
-  :url "http://example.com/FIXME"
+  :plugins [[com.cemerick/clojurescript.test "0.2.2"]
+            [hiccup-bridge "1.0.0-SNAPSHOT"]
+            [lein-cljsbuild "1.0.2"]]
+  :description "An example Om/ClojureScript chat application"
+  :url "http://github.com/sgrove/omchaya"
 
   :jvm-opts ^:replace ["-Xms2G" "-Xmx4G" "-server"]
 
@@ -20,19 +22,33 @@
 
   :source-paths ["src"]
 
-  :cljsbuild { 
-    :builds [{:id "dev"
-              :source-paths ["src"]
-              :compiler {:output-to "omchaya.dev.js"
-                         :output-dir "out/dev"
-                         :optimizations :none
-                         :source-map true}}
-             {:id "prod"
-              :source-paths ["src"]
-              :compiler {:output-to "omchaya.prod.js"
-                         :output-dir "out/prod"
-                         :optimizations :advanced
-                         :source-map "omchaya.prod.js.map"
-                         :pretty-print false
-                         :preamble ["react/react.min.js"]
-                         :externs ["react/externs/react.js"]}}]})
+  :cljsbuild {:test-commands {"unit-tests" ["runners/phantomjs.js" :runner
+                                            "window.literal_js_executed=true"
+                                            "test-cljs/vendor/es5-shim.js"
+                                            "test-cljs/vendor/es5-sham.js"
+                                            "test-cljs/vendor/console-polyfill.js"
+                                            "resources/private/js/unit-test.js"]} 
+              :builds [{:id "dev"
+                        :source-paths ["src"]
+                        :compiler {:output-to "omchaya.dev.js"
+                                   :output-dir "out/dev"
+                                   :optimizations :none
+                                   :source-map true}}
+                       {:source-paths ["src"
+                                       "test-cljs"]
+                        :id "test"
+                        :compiler {:pretty-print true
+                                   :output-dir "resources/private/js/"
+                                   :output-to "resources/private/js/unit-test.js"
+                                   :preamble ["react/react.js"]
+                                   :externs ["react/externs/react.js"]
+                                   :optimizations :whitespace}}
+                       {:id "prod"
+                        :source-paths ["src"]
+                        :compiler {:output-to "omchaya.prod.js"
+                                   :output-dir "out/prod"
+                                   :optimizations :advanced
+                                   :source-map "omchaya.prod.js.map"
+                                   :pretty-print false
+                                   :preamble ["react/react.min.js"]
+                                   :externs ["react/externs/react.js"]}}]})
