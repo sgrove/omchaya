@@ -18,6 +18,12 @@ Omchaya is just for local usage right now. Try a couple of commands:
     Any youtube/vimeo/img/link will be picked up
     Basic pastie support is there
 
+## Debug keybindings
+
+* `ctrl-/`: Open the history player
+* `ctrl-esc`: Open the state ([Ankha](https://github.com/noprompt/ankha)) inspector in an in-app window
+* `ctrl-1`: Change the path to display for the state inspector window
+
 ### I don't have Clojure, but I still want to see it!
 
 Use the demo branch:
