@@ -9,6 +9,8 @@
             [goog.i18n.NumberFormat.Format :as formats]
             [dommy.core :as dommy])
   (:require-macros [cljs.core.async.macros :as am :refer [go alt!]])
+  (:import [goog.net XhrIo]
+           [goog.async Deferred])
   (:use-macros [dommy.macros :only [node sel sel1]]))
 
 (defn uuid
@@ -22,8 +24,25 @@
                        (take 3 (drop 15 r)) ["-"]
                        (take 12 (drop 18 r))))))
 
+(def parsed-uri
+  (goog.Uri. (-> (.-location js/window) (.-href))))
+
+(def initial-query-map
+  {:kandan-channels  (string/split (or (.getParameterValue parsed-uri "kandan-channels") "1") #",")
+   :kandan-api-key   (.getParameterValue parsed-uri "kandan-api-key")
+   :kandan-client?   (seq (.getParameterValue parsed-uri "kandan-api-key"))
+   :log-channels?    (or (.getParameterValue parsed-uri "log-channels") false)
+   :logging-enabled? (= (.getParameterValue parsed-uri "logging-enabled") "true")})
+
+(def logging-enabled?
+  (:logging-enabled? initial-query-map))
+
+(defn mprint [& message]
+  (when logging-enabled?
+    (apply print message)))
+
 (defn safe-sel [s]
-  (str (string/replace (string/lower-case s) #"[\W]" "-")))
+  (str (string/replace (string/lower-case (str s)) #"[\W]" "-")))
 
 (defn email->gravatar-url [email]
   (let [email (or email "unknown-email@unknown-domain.com")
@@ -39,3 +58,22 @@
 
 (defn set-window-href! [path]
   (js/window.history.pushState #js {}, "", path))
+
+(defn ajax [url method data-string success & [error headers]]
+  (let [request (XhrIo.)
+        d (goog.async.Deferred.)
+        listener-id (ge/listen request gevt/COMPLETE (fn [response]
+                                                       (let [target (.-target response)
+                                                             data (if (= method "DELETE")
+                                                                    nil
+                                                                    (.getResponseJson target ))]
+                                                         (.callback d data))))]
+                                        ; Setup deferred callbacks
+    (.addErrback d  (fn [error] (.log js/console "Error on ajax: " error)))
+    (when success (.addCallback d #(success (js->clj % :keywordize-keys true))))
+    (when error (.addErrback d error))
+    (.addBoth d (fn [value] (ge/unlistenByKey listener-id) (.dispose request)))
+    (mprint (str "Firing request to " url " via " method " and data - : " data-string))
+                                        ; Fire request
+    (.send request url method data-string headers)
+    request))

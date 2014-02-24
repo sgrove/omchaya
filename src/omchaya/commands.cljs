@@ -7,7 +7,7 @@
             [omchaya.datetime :as dt]
             [omchaya.mock-data :as mock-data]
             [omchaya.useful :as useful :refer [ffilter]]
-            [omchaya.utils :as utils]
+            [omchaya.utils :as utils :refer [mprint]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true])
   (:require-macros [cljs.core.async.macros :as am :refer [go go-loop alt!]])
@@ -19,8 +19,7 @@
 
 (defmethod handle-maybe-command :default
   [target activity state]
-  ;(print "No command for " (pr-str activity))
-  )
+  (mprint "No command for " (pr-str activity)))
 
 (defmethod handle-maybe-command "/play"
   [target activity state]

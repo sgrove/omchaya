@@ -60,10 +60,10 @@
      :selected false
      :users (take (inc (rand-int (count user-emails))) (shuffle user-emails))
      :activities (vec
-                  (sort-by :created_at (repeatedly (inc (rand-int 10))
+                  (sort-by :created_at (repeatedly (inc (rand-int 0))
                                                    #(random-message (utils/safe-sel title)))))
      :media (vec
-             (take (inc (rand-int 10))
+             (take (inc (rand-int 0))
                    (shuffle media)))
      :sfx {:source-url nil}
      :player {:source-url "https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"
@@ -76,16 +76,19 @@
   (let [channels (into {} (map (comp (juxt :id identity) random-channel) (range 2 100)))]
     {:audio {:volume 100
              :muted true}
+     :windows {:window-inspector {:open false}}
      :settings {:message-limit 50
                 :forms {:search {:focused false}
                         :user-message {:focused false}}
                 :menus {:user-menu {:open false}}
                 :sidebar {:left {:open false}
-                          :right {:open false}}}
-     :selected-channel "lobby"
+                          :right {:open false}}
+                :inspector {:path [:users]}}
+     :selected-channel "1"
      :channels (as-> channels ch
-                     (assoc ch "lobby" (random-channel 1 "Lobby"))
-                     (update-in ch ["lobby"] assoc :selected true))
+                     (assoc ch "1" (-> (random-channel 1 "Lobby")
+                                       (assoc :id "1")))
+                     (update-in ch ["1"] assoc :selected true))
      :users {"sean@bushi.do" {:full-name "Sean Grove"
                               :email "sean@bushi.do"
                               :username "sgrove"}

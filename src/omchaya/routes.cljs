@@ -30,7 +30,6 @@
         api-ch      (get-in @app [:comms :api])]
     (defroute v1-channel-link "/v1/channels/:channel-id"
       [channel-id]
-      (print "Channel id: " channel-id)
       (open-to-channel! app controls-ch (utils/safe-sel channel-id))))
   ;; This triggers the dispatch on the above routes, when a deep link URL is provided.
   ;; goog.History(opt_invisible, opt_blankPageUrl, opt_input, opt_iframe)

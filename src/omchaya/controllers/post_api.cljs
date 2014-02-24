@@ -3,7 +3,8 @@
             [clojure.string :as string]
             [omchaya.commands :as commands]
             [omchaya.ui :as imp-ui]
-            [omchaya.useful :as useful :refer [ffilter]]))
+            [omchaya.useful :as useful :refer [ffilter]]
+            [omchaya.utils :as utils :refer [mprint]]))
 
 (defn notify-if-mentioned! [activity state]
   (let [current-user (get-in state [:users (:current-user-email state)])
@@ -20,8 +21,7 @@
 
 (defmethod post-api-event! :default
   [target message previous-state current-state]
-  ;(print "No post-api handler for: " message)
-  )
+  (mprint "No post-api handler for: " message))
 
 (defmethod post-api-event! :channel-activity-received
   [target message activity previous-state current-state]

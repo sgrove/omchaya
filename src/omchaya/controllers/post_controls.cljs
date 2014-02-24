@@ -8,7 +8,7 @@
             [omchaya.routes :as routes]
             [omchaya.ui :as imp-ui]
             [omchaya.useful :as useful :refer [ffilter]]
-            [omchaya.utils :as utils])
+            [omchaya.utils :as utils :refer [mprint]])
   (:use-macros [dommy.macros :only [sel sel1]]))
 
 (def local-only-commands
@@ -16,7 +16,8 @@
 
 (defn sendable-message? [message]
   (let [[command & _] (string/split message #" |\n")]
-    (if (some #{command} local-only-commands)
+    (if (or (some #{command} local-only-commands)
+            (empty? message))
       false
       true)))
 
@@ -25,11 +26,11 @@
 
 (defmethod post-control-event! :default
   [target message args previous-state current-state]
-  (print "No post-control for: " message))
+  (mprint "No post-control for: " message))
 
 (defmethod post-control-event! :current-user-mentioned
   [target message args previous-state current-state]
-  (print "notify current user they were mentioned"))
+  (mprint "notify current user they were mentioned"))
 
 (defmethod post-control-event! :playlist-entry-played
   [target message [order channel-id] previous-state current-state]
@@ -55,14 +56,22 @@
 (defmethod post-control-event! :user-message-submitted
   [target message args previous-state current-state]
   (let [channel (get-in current-state [:channels (:selected-channel current-state)])
-        user-message (get-in previous-state [:settings :forms :user-message :value])]
+        user-message (get-in previous-state [:settings :forms :user-message :value])
+        content    (get-in previous-state [:settings :forms :user-message :value])
+        user       (get-in current-state [:users (:current-user-email current-state)])
+        channel    (get-in current-state [:channels (:selected-channel current-state)])
+        api-key    (:api-key user)
+        activity   {:content    content
+                    :author     (:email user)
+                    :created_at (js/Date.)
+                    :channel-id (:id channel)}]
     (when-let [input (sel1 target [:.chat-input])]
       (dommy/set-value! input ""))
     (js/setTimeout #(imp-ui/scroll-to-latest-message-when-appropriate! target (:id channel)) 35)
     (commands/handle-maybe-command target {:content user-message
                                            :channel-id (:id channel)} current-state)
     (when (sendable-message? user-message)
-      (api/send-user-message! (:api-key current-state) user-message))))
+      (api/send-user-message! api-key activity))))
 
 (defmethod post-control-event! :audio-player-started
   [target message channel-id previous-state current-state]
@@ -93,12 +102,12 @@
 
 (defmethod post-control-event! :user-logged-out
   [target message [activity url] previous-state current-state]
-  (print "Log the user out somehow"))
+  (mprint "Log the user out somehow"))
 
 (defmethod post-control-event! :history-player-opened
   [target message [activity url] previous-state current-state]
   (when-let [player-el (sel1 :div#player-container)]
-    (replay/install-player! player-el (:api-key current-state)
+    (replay/install-player! player-el (get-in current-state [:users (:current-user-email current-state) :api-key])
                             (replay/initial-player-state (:comms current-state)
                                                          {:player-control replay/player-control-ch
                                                           :player-drag    replay/player-drag-ch
