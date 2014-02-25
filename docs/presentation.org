@@ -1,0 +1,220 @@
+#+OPTIONS: num:nil
+* Browser-UI Challenges
++ Performance
+  + Hand-tweaked optimizations
+  + Uncontrolled mutations
++ Reuse, Sharing
+  + No possible assumptions ∴ no reuse
+    + Example?
+  + Some attempts, like [[http://www.layoutit.com/build][LayoutIt]], [[http://www.divshot.com/][DivShot]], [[https://jetstrap.com/][JetStrap]] handle layout, but no behavior or state management
+  + jQuery-ui has momentum, angular?
++ *Complexity*
+  + Scattered state
+  + Uncontrolled mutations
+
+* Om Intro
+Thin(ish) wrapper around React
++ ~930 LoC
++ ~800 LoC if we're being fair
+** Referentially Transparent UI
+
++ All app state stored in a single reference:
+  #+BEGIN_SRC clojure -n
+  (def app-state
+   (atom {:navbar-expanded? false
+          :search-field     "example"
+          :user             {:id 10
+                             :name "Natsume Soseki"}}))
+  #+END_SRC
+
++ And then passed to user-defined components
+  #+BEGIN_SRC clojure -n
+  (ns om-intro.components
+      (:require [om.core :as om]
+                [om.dom :as dom]))
+  
+  (defn comment-box [app]
+    (om/component
+      (dom/div #js {:className "comment-box"}
+        (dom/h1 nil "Leave a comment")
+        (dom/h3 nil (get-in app [:user :name]))
+        (dom/text {:id "new-comment"}))))
+  
+  (om/root
+    comments-box app-state
+    {:target (sel1 :#comments-container)})
+  #+END_SRC
+#+REVEAL: split  
++ UI is then *derived* from the app state
++ The same state will always produce the same UI
+
+** 1-way Data-flow
+#+BEGIN_SRC clojure
+(om/build comments-box app-state)
+#+END_SRC
+#+BEGIN_SRC html -n
+<div id='comments-container'>
+  <div class='comment-box'>
+    <h1>Leave a comment</h1>
+    <h3>Natsume Soseki</h3>
+    <textarea id='new-comment' />
+  </div>
+</div>
+#+END_SRC
+Mutate the state to trigger a re-render
+#+BEGIN_SRC clojure
+(swap! app-state assoc-in [:user :name] "Mikhail Bulgakov")
+#+END_SRC
+#+BEGIN_SRC html -n
+  <div id='comments-container'>
+    <div class='comment-box'>
+      <h1>Leave a comment</h1>
+      <h3>Mikhail Bulgakov</h3>
+      <textarea id='new-comment' />
+    </div>
+  </div>
+#+END_SRC
+* Performance
+
+#+BEGIN_NOTES
+Lifted from http://html5hub.com/request-animation-frame-for-better-performance by Jon Raasch
+requestAnimationFrame gives the browser control over how many frames it renders. Instead of demanding the browser render frames it will ultimately have to drop, you allow it to spit out frames whenever it’s ready, and above all consistently. The benefit is two-fold:
+
+The animation looks smoother since it uses a consistent frame rate.
+Rather than being overloaded with rendering tasks, the processor is able to handle other tasks while also rendering the animation. In fact, it is able to determine a frame rate that works with the other tasks it is handling.
+Another advantage to using requestAnimationFrame is that it works with the screen’s refresh rate, which defines how quickly the monitor can display a new frame. You see, even if your user has a suped-up processor that can render a ton of frames, it won’t matter if those frames don’t make it onto the screen. And if your animation loop falls out of sync with the screen refresh rate, it will mean a ton of inconsistently dropped frames, and a decidedly choppy-looking animation.
+
+Finally, if the browser’s current tab loses focus, requestAnimationFrame will stop animating. This has important power-saving and performance implications. So go green, and use requestAnimationFrame!
+
+#+END_NOTES
+** Cursors
+Laziest hard-working library:
++ State is managed via cursors
+  + A way of minimizing external world a function/component has to know about
+    + Think update-in: takes a path and a function, function only knows about terminal data, update in translates diff back into origin data structure
+  + Cursors wrap normal data structures, remember their path in a 'parent' data structure
+  + Used along with components to determine which components need to be recalculated
+#+REVEAL: split
++ Uses Clojure's immutable data-structures + cursors to determine if any path has changed via reference-equality check
+  + "Can determine changed paths, starting from the root, in logarithmic time"
++ No state change, no re-render
+
++ After state change, changed paths in state are compared with dependencies in components
+  + Dirty components are re-rendered (to virtual-dom)
+  + Minimizes React reconcilation work
++ Even after state change and virtual-dom re-render, never re-renders actual DOM immediately. Schedules updates via [[https://developer.mozilla.org/en-US/docs/Web/API/window.requestAnimationFrame][requestAnimationFrame()]]
+
+
+** Consistency
++ Om avoids many concurrency issues by *forcing* consistency. 
++ Only _render_ method can read state from cursor. Callbacks, etc. can only access values.
+
+* Reuse
+Declaratively compose your component, at the *right* layer of abstraction
+
+Current state-of-the-art:
+  + Mostly imperative
+  + Opaque, scattered state
+  + Unmanaged state transitions
+
+** Comparison: JS Dropdown
+#+BEGIN_SRC html -n
+<navbar>
+  <ul class="menu">
+      <li>
+          <a href="#">Dropdown</a>
+          <ul>
+              <li><a href="#">Some Action 1</a></li>
+              <li><a href="#">Some Action 2</a></li>
+              <li><a href="#">Some Action 3</a></li>
+              <li><a href="#">Some Action 4</a></li>
+          </ul>
+      </li>
+  </ul>
+</navbar>
+#+END_SRC
+#+BEGIN_SRC javascript -n
+$(document).ready(function() {
+  $('.menu').dropit();
+});
+#+END_SRC
++ Declaration is deeply tied to implementation. Exact structure of children required.
+** Comparison: Om Dropdown
+#+BEGIN_SRC clojure -n
+(om/navbar
+  (om/build drop-down
+            {:children [{:id :action-1 :title "Some Action 1"}
+                        {:id :action-1 :title "Some Action 2"}
+                        {:id :action-1 :title "Some Action 3"}
+                        {:id :action-1 :title "Some Action 4"}]}))
+#+END_SRC
++ Om allows you to work at the abstraction of your UI components
++ Still declarative
++ We don't know the implementation of _drop-down_, but we don't care
++ Component reuse, and very importantly, *sharing* becomes possible
+** Composition
+Example of composable, reusable, components:
+#+BEGIN_SRC clojure -n
+(om/build draggable-window
+   {:title "Data Inspector"
+    :content-com anhk/inspector
+    :content-data (:user app-state)
+    :content-opts {}})
+#+END_SRC
+
+** Sharing
+Components operate on data, so unexpectedly nice use cases come up:
+
++ Om-sync
++ Anhk
++ Draggable-window
++ History-player
+
+We need a Bootstrap that operates on the component-layer: Table views, drop-downs, media players, sliders.
+
+* Real-world App: Omchaya
+  :PROPERTIES:
+  :reveal_background: http://dl.dropbox.com/u/412963/Screenshots/cu.png
+  :END:
+
+A client for the Kandan chat app.
+Source: https://github.com/sgrove/omchaya
+Demo: http://sgrove.github.io/omchaya/prod.html
+
+** Features
+
++ Reasonable mobile support
++ Composable plugin system (Thank you real data structures!)
+  + Mentions
+  + Emoji
+  + Youtube/Vimeo/Image embed
+  + /me support
+  + Inline-pastie
+  + RGB/Hex color embed
++ Collaborative music player and queueing system 
++ Real-time narrowing search across people, media, music, and messages
++ Keybindings
++ Deep-linking
+
+
+** Approach
++ Rendering all done via Om/React
++ Each component sends app-logic events to router via core.async channels
++ State transition managed centrally via controller
++ Imperative/side-effects restricted to post-controller
+
+** Omchaya Flow
+
+#+REVEAL_HTML: <img src="resources/omchaya_flow.png" />
+
+** [[http://localhost:9000/dev.html][Demo!]]
+
+* Challenges
++ Minimize resorting to imperative changes / overcoming limitations of React
+  + React team *super* responsive. They can fix HTML! [[https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio][Imperative API]] => [[https://github.com/facebook/react/issues/1124][Declarative API]]
++ Understanding what to put in local, opaque state vs global state
++ Extensibility. Composability is there, but extensibility is tougher. Maybe extensibility comes form building the right components?
+
+* General Notes
++ Components should be given the *minimum* amount of data to render. Helps with performance as well, but modularity is much more important.
++ React Isolates mutation, Om helps push it out to the edges

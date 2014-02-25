@@ -22,7 +22,7 @@
 
 (defmethod player-step 1
   [format-version active-step-number comm step-number step]
-  [:div.replay-step {:className (when (= active-step-number step-number) "active")
+  [:div.replay-step {:class (when (= active-step-number step-number) "active")
                      :on-click #(put! comm [:step-selected step-number])
                      :style #js {:cursor "pointer"}}
    (pr-str step)])
@@ -57,9 +57,9 @@
     om/IRender
     (render [_]
       (html/html
-       (let [comm (get-in app [:player-comms :player-control])
-             drag-comm (get-in app [:player-comms :player-drag])
-             replays (get-in app [:replays :replay-list])
+       (let [comm          (get-in app [:player-comms :player-control])
+             drag-comm     (get-in app [:player-comms :player-drag])
+             replays       (get-in app [:replays :replay-list])
              queued-replay (get-in app [:replays :queued-replay])
              {:keys [format_version history active-step]} queued-replay]
          [:div.history-player
@@ -92,11 +92,11 @@
               (str "Recording format v" format_version ", recorded on " (:created_at queued-replay))
               (str "No recording loaded"))]]
           [:div.row
-           [:div.col-lg-4
+           [:div.col-lg-4.col-md-4.col-sm-8.col-xs-8
             [:div.playlist-entries
              [:h4 "Replays"]
              (map (partial playlist-entry comm) (range) replays)]]
-           [:div.col-lg-8
+           [:div.col-lg-8.col-md-8.col-sm-8.col-xs-8
             [:div.playlist-steps
              [:h4 "Steps"]
              (map (partial player-step format_version active-step comm) (range) history)]]]])))))

@@ -1,10 +1,14 @@
 (ns omchaya.components.app
-  (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
+  (:require [ankha.core :as ankha]
+            [cljs.reader :as reader]
+            [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [omchaya.components.audio-player :as audio]
+            [omchaya.components.draggable-window :as draggable]
             [omchaya.components.key-queue :as keyq]
             [omchaya.components.navbar :as navbar]
             [omchaya.components.sidebar :as sidebar]
             [omchaya.components.main-area :as main-area]
+            [omchaya.utils :as utils :refer [mprint]]
             [om.core :as om]
             [sablono.core :as html :refer-macros [html]]))
 
@@ -22,16 +26,38 @@
             search-input-focused? (get-in app [:settings :forms :search :focused])
             focus-search! #(when-not message-input-focused?
                              (put! controls-ch [:search-focus-key-pressed]))
+            inspector-path (get-in app [:settings :inspector :path])
+            inspector-path-s (pr-str inspector-path)
             blur-current-field! #(cond
                                   message-input-focused? (put! controls-ch [:user-message-blur-key-pressed])
                                   search-input-focused? (put! controls-ch [:search-form-blur-key-pressed]))
+            
+            change-inspector-path! #(let [path-string (js/prompt "New path (must be edn-compatible)"
+                                                                 inspector-path-s)]
+                                      (try
+                                        (put! controls-ch [:inspector-path-updated (reader/read-string path-string)])
+                                        (catch js/Error e
+                                          (mprint "Not edn-compatible: " path-string))))
+            toggle-inspector! #(put! controls-ch [:toggle-inspector-key-pressed])
             _ (reset! keymap {"ctrl+slash" open-player!
-                              "slash" focus-search!
-                              "esc" blur-current-field!})]
+                              "ctrl+esc"   toggle-inspector!
+                              "ctrl+1"  change-inspector-path!
+                              "slash"      focus-search!
+                              "esc"        blur-current-field!})]
         (html/html
          [:div
           {:className (str (when (get-in app [:settings :sidebar :right :open]) "slide-left ")
                            (when (get-in app [:settings :sidebar :left :open]) "slide-right "))}
+          (when (get-in app [:windows :window-inspector :open])
+            (when-let [path (get-in app [:settings :inspector :path])]
+              (om/build draggable/draggable-window
+                        {:title  (str "Data Inspector: " (pr-str path))
+                         :name :window-inspector
+                         :window (get-in app [:windows :window-inspector])
+                         :comm   (get-in app [:comms :controls])
+                         :content-com ankha/inspector
+                         :content-data (get-in app path)
+                         :content-opts {}})))
           (om/build keyq/KeyboardHandler app {:opts {:keymap keymap
                                                      :error-ch (get-in app [:comms :error])}})
           (om/build-all audio/player (map (fn [[channel-id channel]]

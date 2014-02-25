@@ -8,3 +8,5 @@ pom.xml
 .lein-repl-history
 .lein-plugins/
 omchaya.js
+out/
+resources/private/
