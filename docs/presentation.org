@@ -91,7 +91,7 @@ Finally, if the browser’s current tab loses focus, requestAnimationFrame will 
 Laziest hard-working library:
 + State is managed via cursors
   + A way of minimizing external world a function/component has to know about
-    + Think update-in: takes a path and a function, function only knows about terminal data, update in translates diff back into origin data structure
+    + Think update-in: takes a path and a function, function only knows about terminal data, update-in translates diff back into origin data structure
   + Cursors wrap normal data structures, remember their path in a 'parent' data structure
   + Used along with components to determine which components need to be recalculated
 #+REVEAL: split
