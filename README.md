@@ -2,6 +2,8 @@
 
 A [ClojureScript](https://github.com/clojure/clojurescript) + [Om](https://github.com/swannodette/om) frontend for [Kandan](http://kandanapp.com/). An example app that's actually useful.
 
+![Omchaya Screenshot](/assets/images/screenshot.png "Omchaya in action")
+
 ## Getting the project
 
     git clone https://github.com/sgrove/omchaya.git
