@@ -59,7 +59,7 @@
 (defn slash-me [activity-pieces current-user-email users]
   (if (= (first activity-pieces) "/me")
     (let [user (get users current-user-email)]
-      (assoc-in activity-pieces [0] (:username user)))
+      (assoc-in (vec activity-pieces) [0] (:username user)))
     activity-pieces))
 
 (defn slash-play [activity-pieces]
