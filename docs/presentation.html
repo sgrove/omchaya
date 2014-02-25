@@ -1,0 +1,562 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>presentation</title>
+<meta name="author" content="(Sean Grove)"/>
+<link rel="stylesheet" href="support/reveal.js/css/reveal.min.css"/>
+<link rel="stylesheet" href="support/reveal.js/css/theme/default.css" id="theme"/>
+
+<link rel="stylesheet" href="support/reveal.js/css/print/pdf.css" type="text/css" media="print"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section>
+<h1>presentation</h1>
+<h2>Sean Grove</h2>
+<h2><a href="mailto:sean.s.grove@gmail.com">sean.s.grove@gmail.com</a></h2>
+<h2></h2></section>
+<section>
+<h2>Table of Contents</h2><ul>
+<li>
+<a href="#sec-1">Browser-UI Challenges</a>
+</li>
+<li>
+<a href="#sec-2">Om Intro</a>
+<ul>
+<li>
+<a href="#sec-2-1">Referentially Transparent UI</a>
+</li>
+<li>
+<a href="#sec-2-2">1-way Data-flow</a>
+</li>
+</ul>
+<li>
+<a href="#sec-3">Performance</a>
+<ul>
+<li>
+<a href="#sec-3-1">Cursors</a>
+</li>
+<li>
+<a href="#sec-3-2">Consistency</a>
+</li>
+</ul>
+<li>
+<a href="#sec-4">Reuse</a>
+<ul>
+<li>
+<a href="#sec-4-1">Comparison: JS Dropdown</a>
+</li>
+<li>
+<a href="#sec-4-2">Comparison: Om Dropdown</a>
+</li>
+<li>
+<a href="#sec-4-3">Composition</a>
+</li>
+<li>
+<a href="#sec-4-4">Sharing</a>
+</li>
+</ul>
+<li>
+<a href="#sec-5">Real-world App: Omchaya</a>
+<ul>
+<li>
+<a href="#sec-5-1">Features</a>
+</li>
+<li>
+<a href="#sec-5-2">Approach</a>
+</li>
+<li>
+<a href="#sec-5-3">Omchaya Flow</a>
+</li>
+<li>
+<a href="#sec-5-4"><a href="http://localhost:9000/dev.html">Demo!</a></a>
+</li>
+</ul>
+<li>
+<a href="#sec-6">Challenges</a>
+</li>
+<li>
+<a href="#sec-7">General Notes</a>
+</li>
+</ul>
+</section>
+<section>
+<section id="sec-1" >
+
+<h2>Browser-UI Challenges</h2>
+<ul class="org-ul">
+<li>Performance
+<ul class="org-ul">
+<li>Hand-tweaked optimizations
+</li>
+<li>Uncontrolled mutations
+</li>
+</ul>
+</li>
+<li>Reuse, Sharing
+<ul class="org-ul">
+<li>No possible assumptions ∴ no reuse
+<ul class="org-ul">
+<li>Example?
+</li>
+</ul>
+</li>
+<li>Some attempts, like <a href="http://www.layoutit.com/build">LayoutIt</a>, <a href="http://www.divshot.com/">DivShot</a>, <a href="https://jetstrap.com/">JetStrap</a> handle layout, but no behavior or state management
+</li>
+<li>jQuery-ui has momentum, angular?
+</li>
+</ul>
+</li>
+<li><b>Complexity</b>
+<ul class="org-ul">
+<li>Scattered state
+</li>
+<li>Uncontrolled mutations
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section>
+<section id="sec-2" >
+
+<h2>Om Intro</h2>
+<p>
+Thin(ish) wrapper around React
+</p>
+<ul class="org-ul">
+<li>~930 LoC
+</li>
+<li>~800 LoC if we're being fair
+</li>
+</ul>
+</section>
+<section id="sec-2-1" >
+
+<h3>Referentially Transparent UI</h3>
+<ul class="org-ul">
+<li>All app state stored in a single reference:
+<div class="org-src-container">
+
+<pre class="src src-clojure"><span class="linenr">1: </span>(<span style="color: #00ffff;">def</span> <span style="color: #4186be;">app-state</span>
+<span class="linenr">2: </span> (<span style="color: #ffaa00;">atom</span> {<span style="color: #00ff00;">:navbar-expanded?</span> false
+<span class="linenr">3: </span>        <span style="color: #00ff00;">:search-field</span>     <span style="color: #ffff00;">"example"</span>
+<span class="linenr">4: </span>        <span style="color: #00ff00;">:user</span>             {<span style="color: #00ff00;">:id</span> 10
+<span class="linenr">5: </span>                           <span style="color: #00ff00;">:name</span> <span style="color: #ffff00;">"Natsume Soseki"</span>}}))
+</pre>
+</div>
+</li>
+
+<li>And then passed to user-defined components
+<div class="org-src-container">
+
+<pre class="src src-clojure"><span class="linenr"> 1: </span>(<span style="color: #00ffff;">ns</span> om-intro.components
+<span class="linenr"> 2: </span>    (<span style="color: #00ff00;">:require</span> [om.core <span style="color: #00ff00;">:as</span> om]
+<span class="linenr"> 3: </span>              [om.dom <span style="color: #00ff00;">:as</span> dom]))
+<span class="linenr"> 4: </span>
+<span class="linenr"> 5: </span>(<span style="color: #00ffff;">defn</span> <span style="color: #4186be;">comment-box</span> [app]
+<span class="linenr"> 6: </span>  (om/component
+<span class="linenr"> 7: </span>    (dom/div #js {<span style="color: #00ff00;">:className</span> <span style="color: #ffff00;">"comment-box"</span>}
+<span class="linenr"> 8: </span>      (dom/h1 nil <span style="color: #ffff00;">"Leave a comment"</span>)
+<span class="linenr"> 9: </span>      (dom/h3 nil (<span style="color: #ffaa00;">get-in</span> app [<span style="color: #00ff00;">:user</span> <span style="color: #00ff00;">:name</span>]))
+<span class="linenr">10: </span>      (dom/text {<span style="color: #00ff00;">:id</span> <span style="color: #ffff00;">"new-comment"</span>}))))
+<span class="linenr">11: </span>
+<span class="linenr">12: </span>(om/<span style="color: #cdcd00;">root</span>
+<span class="linenr">13: </span>  comments-box app-state
+<span class="linenr">14: </span>  {<span style="color: #00ff00;">:target</span> (sel1 <span style="color: #00ff00;">:#comments-container</span>)})
+</pre>
+</div>
+</li>
+</ul>
+</section>
+<section>
+<ul class="org-ul">
+<li>UI is then <b>derived</b> from the app state
+</li>
+<li>The same state will always produce the same UI
+</li>
+</ul>
+</section>
+<section id="sec-2-2" >
+
+<h3>1-way Data-flow</h3>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(om/build comments-box app-state)
+</pre>
+</div>
+<div class="org-src-container">
+
+<pre class="src src-html"><span class="linenr">1: </span>&lt;<span style="color: #4186be;">div</span> <span style="color: #e5e5e5; font-weight: bold;">id</span>='comments-container'&gt;
+<span class="linenr">2: </span>  &lt;<span style="color: #4186be;">div</span> <span style="color: #e5e5e5; font-weight: bold;">class</span>='comment-box'&gt;
+<span class="linenr">3: </span>    &lt;<span style="color: #4186be;">h1</span>&gt;<span style="font-weight: bold; text-decoration: underline;">Leave a comment</span>&lt;/<span style="color: #4186be;">h1</span>&gt;
+<span class="linenr">4: </span>    &lt;<span style="color: #4186be;">h3</span>&gt;<span style="font-style: italic; text-decoration: underline;">Natsume Soseki</span>&lt;/<span style="color: #4186be;">h3</span>&gt;
+<span class="linenr">5: </span>    &lt;<span style="color: #4186be;">textarea</span> <span style="color: #e5e5e5; font-weight: bold;">id</span>='new-comment' /&gt;
+<span class="linenr">6: </span>  &lt;/<span style="color: #4186be;">div</span>&gt;
+<span class="linenr">7: </span>&lt;/<span style="color: #4186be;">div</span>&gt;
+</pre>
+</div>
+<p>
+Mutate the state to trigger a re-render
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(<span style="color: #ffaa00;">swap!</span> app-state assoc-in [<span style="color: #00ff00;">:user</span> <span style="color: #00ff00;">:name</span>] <span style="color: #ffff00;">"Mikhail Bulgakov"</span>)
+</pre>
+</div>
+<div class="org-src-container">
+
+<pre class="src src-html"><span class="linenr">1: </span>&lt;<span style="color: #4186be;">div</span> <span style="color: #e5e5e5; font-weight: bold;">id</span>='comments-container'&gt;
+<span class="linenr">2: </span>  &lt;<span style="color: #4186be;">div</span> <span style="color: #e5e5e5; font-weight: bold;">class</span>='comment-box'&gt;
+<span class="linenr">3: </span>    &lt;<span style="color: #4186be;">h1</span>&gt;<span style="font-weight: bold; text-decoration: underline;">Leave a comment</span>&lt;/<span style="color: #4186be;">h1</span>&gt;
+<span class="linenr">4: </span>    &lt;<span style="color: #4186be;">h3</span>&gt;<span style="font-style: italic; text-decoration: underline;">Mikhail Bulgakov</span>&lt;/<span style="color: #4186be;">h3</span>&gt;
+<span class="linenr">5: </span>    &lt;<span style="color: #4186be;">textarea</span> <span style="color: #e5e5e5; font-weight: bold;">id</span>='new-comment' /&gt;
+<span class="linenr">6: </span>  &lt;/<span style="color: #4186be;">div</span>&gt;
+<span class="linenr">7: </span>&lt;/<span style="color: #4186be;">div</span>&gt;
+</pre>
+</div>
+</section>
+
+</section>
+<section>
+<section id="sec-3" >
+
+<h2>Performance</h2>
+<aside class="notes">
+<p>
+Lifted from <a href="http://html5hub.com/request-animation-frame-for-better-performance">http://html5hub.com/request-animation-frame-for-better-performance</a> by Jon Raasch
+requestAnimationFrame gives the browser control over how many frames it renders. Instead of demanding the browser render frames it will ultimately have to drop, you allow it to spit out frames whenever it’s ready, and above all consistently. The benefit is two-fold:
+</p>
+
+<p>
+The animation looks smoother since it uses a consistent frame rate.
+Rather than being overloaded with rendering tasks, the processor is able to handle other tasks while also rendering the animation. In fact, it is able to determine a frame rate that works with the other tasks it is handling.
+Another advantage to using requestAnimationFrame is that it works with the screen’s refresh rate, which defines how quickly the monitor can display a new frame. You see, even if your user has a suped-up processor that can render a ton of frames, it won’t matter if those frames don’t make it onto the screen. And if your animation loop falls out of sync with the screen refresh rate, it will mean a ton of inconsistently dropped frames, and a decidedly choppy-looking animation.
+</p>
+
+<p>
+Finally, if the browser’s current tab loses focus, requestAnimationFrame will stop animating. This has important power-saving and performance implications. So go green, and use requestAnimationFrame!
+</p>
+</aside>
+</section>
+<section id="sec-3-1" >
+
+<h3>Cursors</h3>
+<p>
+Laziest hard-working library:
+</p>
+<ul class="org-ul">
+<li>State is managed via cursors
+<ul class="org-ul">
+<li>A way of minimizing external world a function/component has to know about
+<ul class="org-ul">
+<li>Think update-in: takes a path and a function, function only knows about terminal data, update in translates diff back into origin data structure
+</li>
+</ul>
+</li>
+<li>Cursors wrap normal data structures, remember their path in a 'parent' data structure
+</li>
+<li>Used along with components to determine which components need to be recalculated
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section>
+<ul class="org-ul">
+<li>Uses Clojure's immutable data-structures + cursors to determine if any path has changed via reference-equality check
+<ul class="org-ul">
+<li>"Can determine changed paths, starting from the root, in logarithmic time"
+</li>
+</ul>
+</li>
+<li>No state change, no re-render
+</li>
+
+<li>After state change, changed paths in state are compared with dependencies in components
+<ul class="org-ul">
+<li>Dirty components are re-rendered (to virtual-dom)
+</li>
+<li>Minimizes React reconcilation work
+</li>
+</ul>
+</li>
+<li>Even after state change and virtual-dom re-render, never re-renders actual DOM immediately. Schedules updates via <a href="https://developer.mozilla.org/en-US/docs/Web/API/window.requestAnimationFrame">requestAnimationFrame()</a>
+</li>
+</ul>
+
+</section>
+<section id="sec-3-2" >
+
+<h3>Consistency</h3>
+<ul class="org-ul">
+<li>Om avoids many concurrency issues by <b>forcing</b> consistency. 
+</li>
+<li>Only <span class="underline">render</span> method can read state from cursor. Callbacks, etc. can only access values.
+</li>
+</ul>
+</section>
+</section>
+<section>
+<section id="sec-4" >
+
+<h2>Reuse</h2>
+<p>
+Declaratively compose your component, at the <b>right</b> layer of abstraction
+</p>
+
+<p>
+Current state-of-the-art:
+</p>
+<ul class="org-ul">
+<li>Mostly imperative
+</li>
+<li>Opaque, scattered state
+</li>
+<li>Unmanaged state transitions
+</li>
+</ul>
+
+</section>
+<section id="sec-4-1" >
+
+<h3>Comparison: JS Dropdown</h3>
+<div class="org-src-container">
+
+<pre class="src src-html"><span class="linenr"> 1: </span>&lt;<span style="color: #4186be;">navbar</span>&gt;
+<span class="linenr"> 2: </span>  &lt;<span style="color: #4186be;">ul</span> <span style="color: #e5e5e5; font-weight: bold;">class</span>=<span style="color: #ffff00;">"menu"</span>&gt;
+<span class="linenr"> 3: </span>      &lt;<span style="color: #4186be;">li</span>&gt;
+<span class="linenr"> 4: </span>          &lt;<span style="color: #4186be;">a</span> <span style="color: #e5e5e5; font-weight: bold;">href</span>=<span style="color: #ffff00;">"#"</span>&gt;Dropdown&lt;/<span style="color: #4186be;">a</span>&gt;
+<span class="linenr"> 5: </span>          &lt;<span style="color: #4186be;">ul</span>&gt;
+<span class="linenr"> 6: </span>              &lt;<span style="color: #4186be;">li</span>&gt;&lt;<span style="color: #4186be;">a</span> <span style="color: #e5e5e5; font-weight: bold;">href</span>=<span style="color: #ffff00;">"#"</span>&gt;Some Action 1&lt;/<span style="color: #4186be;">a</span>&gt;&lt;/<span style="color: #4186be;">li</span>&gt;
+<span class="linenr"> 7: </span>              &lt;<span style="color: #4186be;">li</span>&gt;&lt;<span style="color: #4186be;">a</span> <span style="color: #e5e5e5; font-weight: bold;">href</span>=<span style="color: #ffff00;">"#"</span>&gt;Some Action 2&lt;/<span style="color: #4186be;">a</span>&gt;&lt;/<span style="color: #4186be;">li</span>&gt;
+<span class="linenr"> 8: </span>              &lt;<span style="color: #4186be;">li</span>&gt;&lt;<span style="color: #4186be;">a</span> <span style="color: #e5e5e5; font-weight: bold;">href</span>=<span style="color: #ffff00;">"#"</span>&gt;Some Action 3&lt;/<span style="color: #4186be;">a</span>&gt;&lt;/<span style="color: #4186be;">li</span>&gt;
+<span class="linenr"> 9: </span>              &lt;<span style="color: #4186be;">li</span>&gt;&lt;<span style="color: #4186be;">a</span> <span style="color: #e5e5e5; font-weight: bold;">href</span>=<span style="color: #ffff00;">"#"</span>&gt;Some Action 4&lt;/<span style="color: #4186be;">a</span>&gt;&lt;/<span style="color: #4186be;">li</span>&gt;
+<span class="linenr">10: </span>          &lt;/<span style="color: #4186be;">ul</span>&gt;
+<span class="linenr">11: </span>      &lt;/<span style="color: #4186be;">li</span>&gt;
+<span class="linenr">12: </span>  &lt;/<span style="color: #4186be;">ul</span>&gt;
+<span class="linenr">13: </span>&lt;/<span style="color: #4186be;">navbar</span>&gt;
+</pre>
+</div>
+<div class="org-src-container">
+
+<pre class="src src-javascript"><span class="linenr">1: </span>$(document).ready(<span style="color: #00ffff;">function</span>() {
+<span class="linenr">2: </span>  $(<span style="color: #ffff00;">'.menu'</span>).dropit();
+<span class="linenr">3: </span>});
+</pre>
+</div>
+<ul class="org-ul">
+<li>Declaration is deeply tied to implementation. Exact structure of children required.
+</li>
+</ul>
+
+</section>
+<section id="sec-4-2" >
+
+<h3>Comparison: Om Dropdown</h3>
+<div class="org-src-container">
+
+<pre class="src src-clojure"><span class="linenr">1: </span>(om/navbar
+<span class="linenr">2: </span>  (om/build drop-down
+<span class="linenr">3: </span>            {<span style="color: #00ff00;">:children</span> [{<span style="color: #00ff00;">:id</span> <span style="color: #00ff00;">:action-1</span> <span style="color: #00ff00;">:title</span> <span style="color: #ffff00;">"Some Action 1"</span>}
+<span class="linenr">4: </span>                        {<span style="color: #00ff00;">:id</span> <span style="color: #00ff00;">:action-1</span> <span style="color: #00ff00;">:title</span> <span style="color: #ffff00;">"Some Action 2"</span>}
+<span class="linenr">5: </span>                        {<span style="color: #00ff00;">:id</span> <span style="color: #00ff00;">:action-1</span> <span style="color: #00ff00;">:title</span> <span style="color: #ffff00;">"Some Action 3"</span>}
+<span class="linenr">6: </span>                        {<span style="color: #00ff00;">:id</span> <span style="color: #00ff00;">:action-1</span> <span style="color: #00ff00;">:title</span> <span style="color: #ffff00;">"Some Action 4"</span>}]}))
+</pre>
+</div>
+<ul class="org-ul">
+<li>Om allows you to work at the abstraction of your UI components
+</li>
+<li>Still declarative
+</li>
+<li>We don't know the implementation of <span class="underline">drop-down</span>, but we don't care
+</li>
+<li>Component reuse, and very importantly, <b>sharing</b> becomes possible
+</li>
+</ul>
+
+</section>
+<section id="sec-4-3" >
+
+<h3>Composition</h3>
+<p>
+Example of composable, reusable, components:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure"><span class="linenr">1: </span>(om/build draggable-window
+<span class="linenr">2: </span>   {<span style="color: #00ff00;">:title</span> <span style="color: #ffff00;">"Data Inspector"</span>
+<span class="linenr">3: </span>    <span style="color: #00ff00;">:content-com</span> anhk/inspector
+<span class="linenr">4: </span>    <span style="color: #00ff00;">:content-data</span> (<span style="color: #00ff00;">:user</span> app-state)
+<span class="linenr">5: </span>    <span style="color: #00ff00;">:content-opts</span> {}})
+</pre>
+</div>
+</section>
+<section id="sec-4-4" >
+
+<h3>Sharing</h3>
+<p>
+Components operate on data, so unexpectedly nice use cases come up:
+</p>
+
+<ul class="org-ul">
+<li>Om-sync
+</li>
+<li>Anhk
+</li>
+<li>Draggable-window
+</li>
+<li>History-player
+</li>
+</ul>
+
+<p>
+We need a Bootstrap that operates on the component-layer: Table views, drop-downs, media players, sliders.
+</p>
+</section>
+</section>
+<section>
+<section id="sec-5"  data-background="http://dl.dropbox.com/u/412963/Screenshots/cu.png">
+
+<h2>Real-world App: Omchaya</h2>
+
+<p>
+A client for the Kandan chat app.
+Source: <a href="https://github.com/sgrove/omchaya">https://github.com/sgrove/omchaya</a>
+Demo: <a href="http://sgrove.github.io/omchaya/prod.html">http://sgrove.github.io/omchaya/prod.html</a>
+</p>
+
+</section>
+<section id="sec-5-1" >
+
+<h3>Features</h3>
+<ul class="org-ul">
+<li>Reasonable mobile support
+</li>
+<li>Composable plugin system (Thank you real data structures!)
+<ul class="org-ul">
+<li>Mentions
+</li>
+<li>Emoji
+</li>
+<li>Youtube/Vimeo/Image embed
+</li>
+<li>/me support
+</li>
+<li>Inline-pastie
+</li>
+<li>RGB/Hex color embed
+</li>
+</ul>
+</li>
+<li>Collaborative music player and queueing system 
+</li>
+<li>Real-time narrowing search across people, media, music, and messages
+</li>
+<li>Keybindings
+</li>
+<li>Deep-linking
+</li>
+</ul>
+
+</section>
+<section id="sec-5-2" >
+
+<h3>Approach</h3>
+<ul class="org-ul">
+<li>Rendering all done via Om/React
+</li>
+<li>Each component sends app-logic events to router via core.async channels
+</li>
+<li>State transition managed centrally via controller
+</li>
+<li>Imperative/side-effects restricted to post-controller
+</li>
+</ul>
+</section>
+<section id="sec-5-3" >
+
+<h3>Omchaya Flow</h3>
+<img src="resources/omchaya_flow.png" />
+</section>
+<section id="sec-5-4" >
+
+<h3><a href="http://localhost:9000/dev.html">Demo!</a></h3>
+</section>
+</section>
+<section>
+<section id="sec-6" >
+
+<h2>Challenges</h2>
+<ul class="org-ul">
+<li>Minimize resorting to imperative changes / overcoming limitations of React
+<ul class="org-ul">
+<li>React team <b>super</b> responsive. They can fix HTML! <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio">Imperative API</a> =&gt; <a href="https://github.com/facebook/react/issues/1124">Declarative API</a>
+</li>
+</ul>
+</li>
+<li>Understanding what to put in local, opaque state vs global state
+</li>
+<li>Extensibility. Composability is there, but extensibility is tougher. Maybe extensibility comes form building the right components?
+</li>
+</ul>
+</section>
+</section>
+<section>
+<section id="sec-7" >
+
+<h2>General Notes</h2>
+<ul class="org-ul">
+<li>Components should be given the <b>minimum</b> amount of data to render. Helps with performance as well, but modularity is much more important.
+</li>
+<li>React Isolates mutation, Om helps push it out to the edges
+</li>
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="support/reveal.js/lib/js/head.min.js"></script>
+<script src="support/reveal.js/js/reveal.min.js"></script>
+<script>
+
+        		// Full list of configuration options available here:
+        		// https://github.com/hakimel/reveal.js#configuration
+        		Reveal.initialize({
+        			controls: true,
+        			progress: true,
+        			history: true,
+        			center: true,
+        			rollingLinks: true,
+        			keyboard: true,
+        			overview: true,
+        			 // slide width
+        			 // slide height
+        			 // slide margin
+        			 // slide minimum scaling factor
+        			 // slide maximum scaling factor
+
+
+        			theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        			transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+        			transitionSpeed: 'default',
+
+        			// Optional libraries used to extend on reveal.js
+        			dependencies: [
+        				{ src: 'support/reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+        				{ src: 'support/reveal.js/plugin/markdown/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        				{ src: 'support/reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        				{ src: 'support/reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+        				{ src: 'support/reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+        				{ src: 'support/reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+        				// { src: 'support/reveal.js/plugin/search/search.js', async: true, condition: function() { return !!document.body.classList; } }
+        				// { src: 'support/reveal.js/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+        			]
+        		});
+</script>
+</body>
+</html>
