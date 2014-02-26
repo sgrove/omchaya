@@ -144,9 +144,9 @@ $(document).ready(function() {
 (om/navbar
   (om/build drop-down
             {:children [{:id :action-1 :title "Some Action 1"}
-                        {:id :action-1 :title "Some Action 2"}
-                        {:id :action-1 :title "Some Action 3"}
-                        {:id :action-1 :title "Some Action 4"}]}))
+                        {:id :action-2 :title "Some Action 2"}
+                        {:id :action-3 :title "Some Action 3"}
+                        {:id :action-4 :title "Some Action 4"}]}))
 #+END_SRC
 + Om allows you to work at the abstraction of your UI components
 + Still declarative
@@ -213,7 +213,7 @@ Demo: http://sgrove.github.io/omchaya/prod.html
 + Minimize resorting to imperative changes / overcoming limitations of React
   + React team *super* responsive. They can fix HTML! [[https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio][Imperative API]] => [[https://github.com/facebook/react/issues/1124][Declarative API]]
 + Understanding what to put in local, opaque state vs global state
-+ Extensibility. Composability is there, but extensibility is tougher. Maybe extensibility comes form building the right components?
++ Extensibility. Composability is there, but extensibility is tougher. Maybe extensibility comes from building the right components?
 
 * General Notes
 + Components should be given the *minimum* amount of data to render. Helps with performance as well, but modularity is much more important.
