@@ -5,6 +5,9 @@
   :description "An example Om/ClojureScript chat application"
   :url "http://github.com/sgrove/omchaya"
 
+  :license {:name "MIT License"
+            :url "http://www.opensource.org/licenses/mit-license.php"}
+
   :jvm-opts ^:replace ["-Xms2G" "-Xmx4G" "-server"]
 
   :dependencies [[ankha "0.1.1"]
