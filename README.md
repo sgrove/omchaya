@@ -73,3 +73,8 @@ Serve the assets:
 
 ![Omchaya Flow](/docs/resources/omchaya_flow.png "Omchaya Flow")
 
+# License
+
+Omchaya is released under the MIT license, see LICENSE for further details.
+
+Copyright (c) 2014 BUSHIDO INC. unless otherwise mentioned.
