@@ -139,3 +139,12 @@
 (defmethod post-control-event! :channel-destroyed
   [target message channel-id previous-state current-state]
   (api/destroy-channel! (get-in current-state [:comms :api]) channel-id))
+
+(defmethod post-control-event! :state-restored
+  [target message channel-id previous-state current-state]
+  (when (empty? (.getItem js/localStorage "omchaya-state"))
+    (print "No data available to load from localStorage")))
+
+(defmethod post-control-event! :state-persisted
+  [target message channel-id previous-state current-state]
+  (.setItem js/localStorage "omchaya-state" (pr-str (dissoc current-state :comms))))

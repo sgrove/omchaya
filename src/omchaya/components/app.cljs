@@ -18,30 +18,33 @@
   (reify
     om/IRender
     (render [this]
-      (let [selected-channel (get-in app [:channels (:selected-channel app)])
-            current-user (get-in app [:users (:current-user-email app)])
-            controls-ch (get-in app [:comms :controls])
-            open-player! #(put! controls-ch [:history-player-opened])
-            message-input-focused? (get-in app [:settings :forms :user-message :focused])
-            search-input-focused? (get-in app [:settings :forms :search :focused])
-            focus-search! #(when-not message-input-focused?
-                             (put! controls-ch [:search-focus-key-pressed]))
-            inspector-path (get-in app [:settings :inspector :path])
-            inspector-path-s (pr-str inspector-path)
-            blur-current-field! #(cond
-                                  message-input-focused? (put! controls-ch [:user-message-blur-key-pressed])
-                                  search-input-focused? (put! controls-ch [:search-form-blur-key-pressed]))
-            
+      (let [selected-channel        (get-in app [:channels (:selected-channel app)])
+            current-user            (get-in app [:users (:current-user-email app)])
+            controls-ch             (get-in app [:comms :controls])
+            open-player!           #(put! controls-ch [:history-player-opened])
+            message-input-focused?  (get-in app [:settings :forms :user-message :focused])
+            search-input-focused?   (get-in app [:settings :forms :search :focused])
+            focus-search!          #(when-not message-input-focused?
+                                      (put! controls-ch [:search-focus-key-pressed]))
+            inspector-path          (get-in app [:settings :inspector :path])
+            inspector-path-s        (pr-str inspector-path)
+            blur-current-field!    #(cond
+                                     message-input-focused? (put! controls-ch [:user-message-blur-key-pressed])
+                                     search-input-focused?  (put! controls-ch [:search-form-blur-key-pressed]))
             change-inspector-path! #(let [path-string (js/prompt "New path (must be edn-compatible)"
                                                                  inspector-path-s)]
                                       (try
                                         (put! controls-ch [:inspector-path-updated (reader/read-string path-string)])
                                         (catch js/Error e
                                           (mprint "Not edn-compatible: " path-string))))
-            toggle-inspector! #(put! controls-ch [:toggle-inspector-key-pressed])
+            persist-local-state!   #(put! controls-ch [:state-persisted])
+            restore-local-state!   #(put! controls-ch [:state-restored])
+            toggle-inspector!      #(put! controls-ch [:toggle-inspector-key-pressed])
             _ (reset! keymap {"ctrl+slash" open-player!
                               "ctrl+esc"   toggle-inspector!
-                              "ctrl+1"  change-inspector-path!
+                              "ctrl+1"     change-inspector-path!
+                              "ctrl+s"     persist-local-state!
+                              "ctrl+r"     restore-local-state!
                               "slash"      focus-search!
                               "esc"        blur-current-field!})]
         (html/html

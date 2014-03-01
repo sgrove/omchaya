@@ -1,5 +1,6 @@
 (ns omchaya.controllers.controls
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
+            [cljs.reader :as reader]
             [omchaya.utils :as utils :refer [mprint]]))
 
 (defmulti control-event
@@ -195,3 +196,12 @@
 (defmethod control-event :inspector-path-updated
   [target message path state]
   (assoc-in state [:settings :inspector :path] path))
+
+(defmethod control-event :state-restored
+  [target message path state]
+  (let [str-data (.getItem js/localStorage "omchaya-state")]
+    (if (seq str-data)
+      (-> str-data
+          reader/read-string
+          (assoc :comms (:comms state)))
+      state)))
