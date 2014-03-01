@@ -74,15 +74,17 @@
            (async/timeout 30000) (mprint (pr-str @history)))))))
 
 (defn setup! []
-  (main (. js/document (getElementById "app")) app-state)
-  (when (:kandan-client? utils/initial-query-map)
-    (let [api-key       (:kandan-api-key utils/initial-query-map)
-          kandan-client (kandan-api/make-client api-key "http://localhost:3000/remote/faye")
-          channels      (:kandan-channels utils/initial-query-map)
-          comms         (:comms @app-state)]
-      (put! (:controls comms) [:api-key-updated api-key])
-      (doseq [channel channels]
-        (kandan-api/subscribe! kandan-client (str "/channels/" channel) (:api comms))))))
+  (let [comms (:comms @app-state)]
+    (main (. js/document (getElementById "app")) app-state)
+    (when (:restore-state? utils/initial-query-map)
+      (put! (:controls comms) [:state-restored]))
+    (when (:kandan-client? utils/initial-query-map)
+      (let [api-key       (:kandan-api-key utils/initial-query-map)
+            kandan-client (kandan-api/make-client api-key "http://localhost:3000/remote/faye")
+            channels      (:kandan-channels utils/initial-query-map)]
+        (put! (:controls comms) [:api-key-updated api-key])
+        (doseq [channel channels]
+          (kandan-api/subscribe! kandan-client (str "/channels/" channel) (:api comms)))))))
 
 (set! (.-onload js/window) setup!)
 

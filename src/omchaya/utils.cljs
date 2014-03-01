@@ -32,7 +32,8 @@
    :kandan-api-key   (.getParameterValue parsed-uri "kandan-api-key")
    :kandan-client?   (seq (.getParameterValue parsed-uri "kandan-api-key"))
    :log-channels?    (or (.getParameterValue parsed-uri "log-channels") false)
-   :logging-enabled? (= (.getParameterValue parsed-uri "logging-enabled") "true")})
+   :logging-enabled? (= (.getParameterValue parsed-uri "logging-enabled") "true")
+   :restore-state?   (= (.getParameterValue parsed-uri "restore-state") "true")})
 
 (def logging-enabled?
   (:logging-enabled? initial-query-map))
