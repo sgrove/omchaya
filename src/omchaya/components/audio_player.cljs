@@ -5,13 +5,18 @@
 
 (defn player [audio-data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "AudioPlayer")
     om/IRender
     (render [this]
       (let [{:keys [sfx player audio-settings id]} audio-data
             audio-source (:source-url player)
             comm (get-in opts [:comms :controls])]
         (html/html
-         [:div {:style #js {:display "none"}}
+         [:div {:react-key id
+                :key id
+                :style #js {:display "none"}}
           [:audio.audio-player
            (merge {:src audio-source
                    :key (str "audio-" id)

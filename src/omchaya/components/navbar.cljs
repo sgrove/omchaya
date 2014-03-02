@@ -11,37 +11,49 @@
                     :on-click #(put! comm [:tab-selected id])
                     :class (str (utils/safe-sel (:id channel)) (when (:selected channel) " active"))}
      [:a.show_channel
-      {:on-click (comp (constantly false)
+      {:key "a"
+       :on-click (comp (constantly false)
                        #(put! comm [:tab-selected id]))}
       (:title channel)
       (when (:loading channel)
-        [:i.icon-spinner.icon-spin])]]))
+        [:i.icon-spinner.icon-spin {:key "i"}])]]))
 
 (defn navbar [data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "Navbar")
     om/IRender
     (render [this]
       (html/html
        (let [comm (get-in opts [:comms :controls])
              settings (:settings data)]
-         [:nav.nav {:class (when (get-in settings [:forms :search :focused]) "search-focus")}
+         [:nav.nav {:key "nav"
+                    :class (when (get-in settings [:forms :search :focused]) "search-focus")}
           [:form.search
-           {:action "/search"
+           {:key "form"
+            :action "/search"
             :method "get"
             :on-submit (constantly false)}
-           [:input.query {:name "query"
+           [:input.query {:key "query"
+                          :name "query"
                           :type "text"
                           :on-focus  #(put! comm [:search-form-focused])
                           :on-blur   #(put! comm [:search-form-blurred])
                           :on-key-up #(put! comm [:search-form-updated (.. % -target -value)])}]
-           [:input.submit {:value "Search"
+           [:input.submit {:key "search"
+                           :value "Search"
                            :type "submit"}]]
           [:ul#channel_nav
+           {:key "channel-nav"}
            (map (partial tab comm) (sort-by :order (vals (:channels data))))
            [:li {:key "new-tab"
                  :on-click #(put! comm [:create-channel-menu-opened])}
             [:a#create_channel
-             {:href "#"
+             {:key "create-channel"
+              :href "#"
               :on-click (comp (constantly false)
                               #(put! comm [:create-channel-menu-opened]))}
-             [:strong " + "]]]]])))))
+             [:strong
+              {:key "strong"}
+              " + "]]]]])))))

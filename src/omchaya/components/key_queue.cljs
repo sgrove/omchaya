@@ -101,8 +101,11 @@
 (defn KeyboardHandler [app owner {:keys [keymap error-ch]}]
   (let [ch (async/chan)]
     (reify
+      om/IDisplayName
+      (display-name [_]
+        "KeyboardHandler")
       om/IDidMount
-      (did-mount [_ _]
+      (did-mount [_]
         (async/tap key-mult ch)
         (async/go-loop [waiting-keys []
                         t-chan nil]
