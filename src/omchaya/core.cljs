@@ -52,7 +52,8 @@
      app/app
      state
      {:target target
-      :opts {:comms comms}})
+      :opts {:comms comms}
+      :react-key "omchaya-app"})
     (go (while true
           (alt!
            (:controls comms) ([v]
