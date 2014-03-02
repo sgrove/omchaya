@@ -29,6 +29,8 @@
                          "/queue https://dl.dropboxusercontent.com/u/412963/Golf%20Clap.mp3"
                          "/queue https://dl.dropboxusercontent.com/u/412963/cheer.mp3"
                          "/queue https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"
+                         "Someone checkout http://www.youtube.com/watch?v=zN7I2zeLZwo"
+                         ":bomb: http://www.youtube.com/watch?v=zN7I2zeLZwo"
                          "@sacha Be careful with that"
                          "Hey @nb - I got you something nice... (not really)"])
      :channel-id channel-id}))
@@ -60,7 +62,7 @@
      :selected false
      :users (take (inc (rand-int (count user-emails))) (shuffle user-emails))
      :activities (vec
-                  (sort-by :created_at (repeatedly (inc (rand-int 0))
+                  (sort-by :created_at (repeatedly 50 ;;(inc (rand-int 50))
                                                    #(random-message (utils/safe-sel title)))))
      :media (vec
              (take (inc (rand-int 0))
@@ -73,7 +75,7 @@
               :playlist []}}))
 
 (defn initial-state [comms]
-  (let [channels (into {} (map (comp (juxt :id identity) random-channel) (range 2 100)))]
+  (let [channels (into {} (map (comp (juxt :id identity) random-channel) (range 0 0)))]
     {:audio {:volume 100
              :muted true}
      :windows {:window-inspector {:open false}}

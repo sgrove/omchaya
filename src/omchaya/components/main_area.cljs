@@ -3,6 +3,7 @@
             [clojure.string :as string]
             [omchaya.datetime :as dt]
             [omchaya.plugins :as plugins]
+            [omchaya.components.stack-panel :as stack-panel]
             [omchaya.utils :as utils]
             [om.core :as om]
             [sablono.core :as html :refer-macros [html]]))
@@ -22,24 +23,65 @@
     (interpose " " content)))
 
 (defn activity-entry [current-user-email users settings author activity]
-  (list
-   [:div.activity {:id (str "activity-" (:id activity))
-                   :class (when (= current-user-email (:email author)) "current_user")
-                   :key (:created_at activity)}
-    [:span.posted_at (str (dt/time-ago (:created_at activity)) " ago")]
-    (utils/gravatar-for (:email author))
-    [:div.readable
-     [:span.user (or (:full-name author)
-                     (:email author))]
-     [:span.content (activity-content current-user-email users settings author activity)]]
-    (map (fn [media]
-           [:div.media-entry
-            media])
-         (remove string? (-> (string/split (:content activity) delimiter-re)
-                             plugins/image-embed
-                             plugins/youtube-embed
-                             plugins/vimeo-embed)))]))
+  [:div.activity {:key (str "activity-" (:id activity) "-" (:created_at activity))
+                  :id (str "activity-" (:id activity))
+                  :class (when (= current-user-email (:email author)) "current_user")
+                  :onScroll #(js/console.log "Activity container scroll")}
+   [:span.posted_at {:key "posted-at"} (str (dt/time-ago (:created_at activity)) " ago")]
+   (utils/gravatar-for (:email author))
+   [:div.readable {:key "readable"}
+    [:span.user {:key "user"}
+     (or (:full-name author)
+         (:email author))]
+    [:span.content
+     {:key "content"
+      :onClick #(js/console.log "Activity content click")
+      :onScroll #(js/console.log "Activity content scroll")}
+     (activity-content current-user-email users settings author activity)]]
+   (map (fn [media]
+          [:div.media-entry
+           {:key "media-entry"}
+           media])
+        (remove string? (-> (string/split (:content activity) delimiter-re)
+                            plugins/image-embed
+                            plugins/youtube-embed
+                            plugins/vimeo-embed)))])
 
+(defn activity-entry-com [activity owner opts]
+  (reify
+    om/IDisplayName
+    (display-name [_]
+      "ActivityEntry")
+    om/IRender
+    (render [_]
+      (let [current-user-email "sean@bushi.do"
+            users []
+            settings {}
+            author {:email (:author activity)}]
+        (html/html
+         [:div.activity {:key (str "activity-" (:id activity) "-" (:created_at activity))
+                         :id (str "activity-" (:id activity))
+                         :class (when (= current-user-email (:email author)) "current_user")
+                         :onScroll #(js/console.log "Activity container scroll")}
+          [:span.posted_at {:key "posted-at"} (str (dt/time-ago (:created_at activity)) " ago")]
+          (utils/gravatar-for (:email author))
+          [:div.readable {:key "readable"}
+           [:span.user {:key "user"}
+            (or (:full-name author)
+                (:email author))]
+           [:span.content
+            {:key "content"
+             :onClick #(js/console.log "Activity content click")
+             :onScroll #(js/console.log "Activity content scroll")}
+            (activity-content current-user-email users settings author activity)]]
+          (map (fn [media]
+                 [:div.media-entry
+                  {:key "media-entry"}
+                  media])
+               (remove string? (-> (string/split (:content activity) delimiter-re)
+                                   plugins/image-embed
+                                   plugins/youtube-embed
+                                   plugins/vimeo-embed)))])))))
 
 (defn chatbox [comm opts]
   [:div.chatbox [:textarea.chat-input
@@ -62,12 +104,13 @@
                           %))
        filtered-activities))
 
-(defn main-area [{:keys [channel search-filter]} owner opts]
+(defn main-area [{:keys [channel search-filter] :as state} owner opts]
   (reify
     om/IRender
     (render [this]
       (html/html
        (let [comm       (get-in opts [:comms :controls])
+             sp-comm    (get-in opts [:comms :sp])
              re-filter  (when search-filter (js/RegExp. search-filter "ig"))
              activities (:activities channel)
              filtered-activities (if re-filter
@@ -89,11 +132,21 @@
           [:div#channels
            [:div.channels-pane {:id (str "channels-" (:id channel))
                                 :class (when (:selected channel) "active")}
-            [:div.paginated-activities
-             (when (:loading-more-messages channel)
-               [:div.pagination
-                [:i.icon-spinner.icon-spin.icon-2x]
-                "Loading previous messages"])
-             (activities-list filtered-activities opts)]
+            (om/build stack-panel/stack-panel (om/graft {:title "StackPanel"
+                                                         :scroll-position 0
+                                                         :vp-height 1228
+                                                         :vp-class "paginated-activities"
+                                                         :item-com activity-entry-com
+                                                         :items (sort-by :created_at filtered-activities)
+                                                         :item-options opts}
+                                                        channel)
+                      {:opts {:comm sp-comm
+                              :item-height-best-guess 65}})
             (chatbox comm opts)]]])))))
  
+
+(comment
+  (when (:loading-more-messages channel)
+    [:div.pagination {:key "pagination"}
+     [:i.icon-spinner.icon-spin.icon-2x {:key "i"}]
+     "Loading previous messages"]))
