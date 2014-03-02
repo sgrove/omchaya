@@ -20,6 +20,9 @@
 
 (defn draggable-window [data owner opts]
   (reify
+    ;; om/IDisplayName
+    ;; (display-name [_]
+    ;;   "DraggableWindow")
     om/IWillMount
     (will-mount [_]
       (let [mouse-move-chan

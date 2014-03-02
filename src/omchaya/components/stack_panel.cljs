@@ -37,9 +37,9 @@
 ;; Currently invoked in main_area.cljs
 (defn stack-panel [panel-data owner opts]
   (reify
-    om/IDisplayName
-    (display-name [_]
-      (or (:react-name opts) "StackPanel"))
+    ;; om/IDisplayName
+    ;; (display-name [_]
+    ;;   (or (:react-name opts) "StackPanel"))
     om/IWillMount
     (will-mount [_]
       ;; Create a channel where the item will notify us of its actual height on render

@@ -49,9 +49,9 @@
 
 (defn activity-entry-com [activity owner opts]
   (reify
-    om/IDisplayName
-    (display-name [_]
-      "ActivityEntry")
+    ;; om/IDisplayName
+    ;; (display-name [_]
+    ;;   "ActivityEntry")
     om/IRender
     (render [_]
       (let [current-user-email "sean@bushi.do"

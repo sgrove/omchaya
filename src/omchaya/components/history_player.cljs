@@ -35,6 +35,9 @@
 
 (defn player [app owner]
   (reify
+    ;; om/IDisplayName
+    ;; (display-name [_]
+    ;;   "HistoryPlayer")
     om/IWillMount
     (will-mount [_]
       (let [mouse-move-chan
