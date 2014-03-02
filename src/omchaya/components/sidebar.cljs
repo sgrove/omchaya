@@ -7,21 +7,23 @@
             [sablono.core :as html :refer-macros [html]]))
 
 (defn people-entry [comm person]
-  [:li.user
-   {:title (or (:full-name person)
-               (:username person)
-               (:email person))
-    :key (:email person)}
-   (utils/gravatar-for (:email person))
-   (or (:full-name person)
-       (:username person))])
+  (let [title (or (:full-name person)
+                  (:username person)
+                  (:email person))]
+    [:li.user
+     {:title title
+      :key (:email person)}
+     (utils/gravatar-for (:email person))
+     title]))
 
 (defn people-widget [{:keys [channel-users-emails search-filter] :as data} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "PeopleWidget")
     om/IRender
     (render [this]
-      (html/html
-       (let [comm (get-in opts [:comms :controls])
+      (let [comm (get-in opts [:comms :controls])
              re-filter (when search-filter (js/RegExp. search-filter "ig"))
              channel-users (vals (select-keys (:users opts) channel-users-emails))
              fil-users (if re-filter
@@ -29,16 +31,19 @@
                                       (.match (:email %) re-filter)
                                       (.match (:username %) re-filter)) channel-users)
                          channel-users)]
+        (html/html
          [:ul.user_list
           (map (partial people-entry comm) fil-users)])))))
 
 (defn current-user [comm user]
   [:a.user-menu-toggle
-   {:href "#"
+   {:key "current-user"
+    :href "#"
     :on-click (comp (constantly false)
                     #(put! comm [:user-menu-toggled]))}
    (utils/gravatar-for (:email user))
-   [:i.icon-angle.button.right {:style #js {:height "inherit"}}]
+   [:i.icon-angle.button.right {:key "icon"
+                                :style #js {:height "inherit"}}]
    (:full-name user)])
 
 (defn media-name [src]
@@ -59,13 +64,17 @@
             (when (= (:order entry) (get-in opts [:channels (:selected-channel opts) :player :playing-order]))
               {:style #js {:background-color "#ccc"}}))
      [:a
-      {:style #js {:cursor "pointer"}
+      {:key "link"
+       :style #js {:cursor "pointer"}
        :on-click (comp (constantly false)
                        #(put! comm [:playlist-entry-played [order (:selected-channel opts)]]))}
       (:order entry) ". " name]]))
 
 (defn playlist-widget [{:keys [player search-filter]} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "PlaylistWidget")
     om/IRender
     (render [_]
       (html/html
@@ -75,21 +84,15 @@
                             (filter #(.match (media-name (:src %)) re-filter) (:playlist player))
                             (:playlist player))]
          [:div 
-          [:ul.user_list
+          [:ul.people_list
+           {:key "playlist"}
            (map (partial playlist-entry comm opts)
                 (sort-by :order fil-playlist))]])))))
 
 (defn playlist-action-widget [{:keys [player]} owner opts]
   (let [comm (get-in opts [:comms :controls])]
     (html/html
-     [:div.dropzone
-      (if (= (:state player) :playing)
-        [:i.fa.fa-pause
-         {:style #js {:cursor "pointer"}
-          :on-click #(put! comm [:audio-player-stopped (:selected-channel opts)])}]
-        [:i.fa.fa-play
-         {:style #js {:cursor "pointer"}
-          :on-click #(put! comm [:audio-player-started (:selected-channel opts)])}])])))
+     [:div.example {:key "ok"}])))
 
 (def icon-map
   {"png" "img"
@@ -103,14 +106,18 @@
                       last)]
     [:li.file_item {:key (:src media)}
      [:a
-      {:href "#"
+      {:key "a"
+       :href "#"
        :on-click (constantly false)
        :target "_blank"}
-      [:img {:src (str "/assets/images/" (get icon-map extension "file") "_icon.png")}]
-      [:span (:name media)]]]))
+      [:img {:key "img" :src (str "/assets/images/" (get icon-map extension "file") "_icon.png")}]
+      [:span {:key "span"} (:name media)]]]))
 
 (defn media-widget [{:keys [channel-id media search-filter]} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "MediaWidget")
     om/IRender
     (render [this]
       (html/html
@@ -125,49 +132,65 @@
   (let []
     (html/html
      [:form#file_upload
-      {:method "post",
+      {:key "form"
+       :method "post",
        :html "{:multipart=>true}",
        :data-remote "true",
        :action (str "/channels/" channel-id "/attachments.json"),
        :accept-charset "UTF-8"}
       [:div
-       {:style #js {:margin "0", :padding "0", :display "inline"}}
-       [:input {:value "✓", :type "hidden", :name "utf8"}]
+       {:key "div"
+        :style #js {:margin "0", :padding "0", :display "inline"}}
+       [:input {:key "hidden" :value "✓", :type "hidden", :name "utf8"}]
        [:input
-        {:value "bpuDvAt5w97Cp4khpWE25tcTsD2vFEFpKwsIAG0m8fw=",
+        {:key "input"
+         :value "bpuDvAt5w97Cp4khpWE25tcTsD2vFEFpKwsIAG0m8fw=",
          :type "hidden",
          :name "authenticity_token"}]]
-      [:input#channel_id_1 {:type "hidden", :name (str "channel_id[" channel-id "]")}]
-      [:input#file {:type "file", :name "file"}]
-      [:div.dropzone "Drop file here to upload"]])))
+      [:input#file {:key "file" :type "file", :name "file"}]
+      [:div.dropzone {:key "dropzone"} "Drop file here to upload"]])))
 
 (defn widget [data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "SidebarWidget")
     om/IRender
     (render [this]
       (html/html
        (let [comm (:comm opts)]
-         [:div.widget
-          [:h5.widget-header.unselectable
-           [:img {:src (:icon opts)}]
+         [:div.widget {:key (:title opts)}
+          [:h5.widget-header.unselectable {:key "header"}
+           [:img {:key "icon"
+                  :src (:icon opts)}]
            (:title opts)]
-          [:div.widget-content
-           (om/build (:content-comp opts) (:content-data data) {:opts (:content-opts data)})]
-          (when (:action-comp opts)
-            [:div.widget-action-bar
-             (om/build (:action-comp opts) (:action-data data) {:opts (:action-opts data)})])])))))
+          [:div.widget-content {:key "content"}
+           (om/build (:content-comp opts) (:content-data data) {:react-key "widget"
+                                                                :opts (:content-opts data)})
+           ]
+          ;; (when (:action-comp opts)
+          ;;   [:div.widget-action-bar {:key "action-bar"}
+          ;;    (om/build (:action-comp opts) (:action-data data) {:opts (:action-opts data)
+          ;;                                                       :key       :action-bar
+          ;;                                                       :react-key "action-bar"})
+          ;;    ])
+          ])))))
 
 (defn sidebar [data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "Sidebar")
     om/IRender
     (render [this]
-      (html/html
-       (let [comm (get-in opts [:comms :controls])
+      (let [comm (get-in opts [:comms :controls])
              channel (:channel data)
              settings (:settings data)
-             search-filter (:search-filter data)]
-         [:aside.sidebar
-          [:div.header.user-header {:class (when (get-in settings [:menus :user-menu :open]) "open-menu")}
+            search-filter (:search-filter data)]
+        (html/html
+         [:aside.sidebar {:key "sidebar"}
+          [:div.header.user-header {:key "user-header"
+                                    :class (when (get-in settings [:menus :user-menu :open]) "open-menu")}
            (current-user comm (get-in opts [:users (:current-user-email opts)]))
            [:ul.user-menu
             [:li]
@@ -200,7 +223,9 @@
                      {:opts {:title "Playlist"
                              :icon "/assets/images/video_icon.png"
                              :content-comp playlist-widget
-                             :action-comp playlist-action-widget}})
+                             :action-comp playlist-action-widget
+                             :react-key "playlist"
+                             :key :playlist}})
            (om/build widget
                      {:content-data {:search-filter search-filter
                                      :media       (:media channel)
@@ -210,4 +235,5 @@
                      {:opts {:title "My Media"
                              :icon "/assets/images/media_icon.png"
                              :content-comp media-widget
-                             :action-comp media-action-widget}})]])))))
+                             :action-comp media-action-widget}})]
+          ])))))
