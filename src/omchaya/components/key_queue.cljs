@@ -102,7 +102,7 @@
   (let [ch (async/chan)]
     (reify
       om/IDidMount
-      (did-mount [_ _]
+      (did-mount [_]
         (async/tap key-mult ch)
         (async/go-loop [waiting-keys []
                         t-chan nil]
