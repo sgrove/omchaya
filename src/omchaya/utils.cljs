@@ -52,10 +52,10 @@
         hash (crypt/byteArrayToHex (.digest container))]
     (str "http://gravatar.com/avatar/" hash "?s=30&d=identicon")))
 
-(defn gravatar-for [email]
+(defn gravatar-for [email & [optional-uid]]
   [:img.avatar
-   {:src
-    (email->gravatar-url email)}])
+   {:key (str email optional-uid)
+    :src (email->gravatar-url email)}])
 
 (defn set-window-href! [path]
   (js/window.history.pushState #js {}, "", path))
