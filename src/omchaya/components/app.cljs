@@ -16,6 +16,9 @@
 
 (defn app [app owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "Omchaya"))
     om/IRender
     (render [this]
       (let [selected-channel        (get-in app [:channels (:selected-channel app)])

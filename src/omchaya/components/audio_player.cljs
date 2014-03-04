@@ -5,6 +5,9 @@
 
 (defn player [audio-data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "AudioPlayer"))
     om/IRender
     (render [this]
       (let [{:keys [sfx player audio-settings id]} audio-data

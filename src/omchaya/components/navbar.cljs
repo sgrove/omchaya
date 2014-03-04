@@ -19,6 +19,9 @@
 
 (defn navbar [data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "Navbar"))
     om/IRender
     (render [this]
       (html/html

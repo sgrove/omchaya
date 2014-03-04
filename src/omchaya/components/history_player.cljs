@@ -33,8 +33,11 @@
     :style #js {:cursor "pointer"}}
    (or (:name replay) "No name for recording")])
 
-(defn player [app owner]
+(defn player [app owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "HistoryPlayer"))
     om/IWillMount
     (will-mount [_]
       (let [mouse-move-chan

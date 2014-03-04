@@ -148,3 +148,8 @@
 (defmethod post-control-event! :state-persisted
   [target message channel-id previous-state current-state]
   (.setItem js/localStorage "omchaya-state" (pr-str (dissoc current-state :comms))))
+
+(defmethod post-control-event! :window-resized
+  [target message channel-id previous-state current-state]
+  ;; Figure out re-layout code here
+  )

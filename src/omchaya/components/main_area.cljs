@@ -5,6 +5,7 @@
             [omchaya.plugins :as plugins]
             [omchaya.utils :as utils]
             [om.core :as om]
+            [om.dom :as dom]
             [sablono.core :as html :refer-macros [html]]))
 
 (def delimiter-re #" ")
@@ -64,6 +65,9 @@
 
 (defn main-area [{:keys [channel search-filter]} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      "MainArea")
     om/IRender
     (render [this]
       (html/html

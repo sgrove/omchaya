@@ -18,6 +18,9 @@
 
 (defn people-widget [{:keys [channel-users-emails search-filter] :as data} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "PeopleWidget"))
     om/IRender
     (render [this]
       (html/html
@@ -66,6 +69,9 @@
 
 (defn playlist-widget [{:keys [player search-filter]} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "PlaylistWidget"))
     om/IRender
     (render [_]
       (html/html
@@ -111,6 +117,9 @@
 
 (defn media-widget [{:keys [channel-id media search-filter]} owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "MediaWidget"))
     om/IRender
     (render [this]
       (html/html
@@ -143,6 +152,9 @@
 
 (defn widget [data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "Widget"))
     om/IRender
     (render [this]
       (html/html
@@ -159,6 +171,9 @@
 
 (defn sidebar [data owner opts]
   (reify
+    om/IDisplayName
+    (display-name [_]
+      (or (:react-name opts) "Sidebar"))
     om/IRender
     (render [this]
       (html/html
@@ -166,6 +181,7 @@
              channel (:channel data)
              settings (:settings data)
              search-filter (:search-filter data)]
+         (print "Sidebar render")
          [:aside.sidebar
           [:div.header.user-header {:class (when (get-in settings [:menus :user-menu :open]) "open-menu")}
            (current-user comm (get-in opts [:users (:current-user-email opts)]))

@@ -98,11 +98,14 @@
   [keymap keys]
   (->> keymap (keep (fn [[c f]] (if (combos-match? c keys) f))) first))
 
-(defn KeyboardHandler [app owner {:keys [keymap error-ch]}]
+(defn KeyboardHandler [app owner {:keys [keymap error-ch]} opts]
   (let [ch (async/chan)]
     (reify
+      om/IDisplayName
+      (display-name [_]
+        (or (:react-name opts) "KeyboardHandler"))
       om/IDidMount
-      (did-mount [_ _]
+      (did-mount [_]
         (async/tap key-mult ch)
         (async/go-loop [waiting-keys []
                         t-chan nil]
