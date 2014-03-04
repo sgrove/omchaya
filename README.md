@@ -65,13 +65,21 @@ Serve the assets:
     python -m SimpleHTTPServer 9000
     open http://localhost:9000/dev.html
 
-## Omchaya Approach
+### Omchaya Design
 * Rendering all done via Om/React
 * Each component sends app-logic events to router via core.async channels
 * State transition managed centrally via controller
 * Imperative/side-effects restricted to post-controller
 
 ![Omchaya Flow](/docs/resources/omchaya_flow.png "Omchaya Flow")
+
+### Facebook React Devtools Support
+
+Omchaya uses Om `> 0.5.1` to implement `IDisplayName` for components, so we can take advantage of the [Facebook React Devtools](https://github.com/facebook/react-devtools) `> 0.8` to see the structure of your web app in terms of the components you expect.
+
+Here's an idea of what it looks like - notice the name of the tags shown:
+
+![Facebook React Devtools <3 Omchaya](/docs/resources/facebook_react_devtools.png "Facebook React Devtools <3 Omchaya")
 
 # License
 
