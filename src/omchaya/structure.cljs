@@ -244,90 +244,111 @@
    [:navbar/navbar {:paths {:channels [:path [:channels]]
                             :settings [:path [:settings]]}
                     :transformer identity}]]
-  ;; What would it look like if it were more JSX-ish?
+  ;; <!-- What would it look like if it were more JSX-ish?  -->
+  ;; <!-- 1. Periods represent clojures's ns separator, with the last one auto-converted to / -->
+  ;; <!-- 2. Unqualified component names are assumed to have been :refer'd -->
+  ;; <!-- 2. If a transformer is omitted, its path dependencies are static and identity is used -->
+  ;; <!-- 3. HTML elements and components can be intermixed freely, component invocation is determined at compile-time -->
   <app.app paths={:sidebars [:path [:settings sidebar]]}>
-    <draggable.draggable-window paths={:inspector-path [:path [:settings inspector path]]
-                                       :name   [:value window-inspector]
-                                       :window [:path [:windows window-inspector]]}
-                                transformer=trans-inspector-window>
-      <ankha-container.ankha-container paths={:app [:path []]
-                                              inspector-path [:path [:settings inspector path]]}
-                                       transformer=trans-ankha-inspector>
-      </ankha-container.ankha-container>
-    </draggable.draggable-window>
-    <keyq.keyboard-handler paths={:key-map [:path [:settings key-bindings app]]}>
-    </keyq.keyboard-handler>
+    <draggable-window paths={:inspector-path [:path [:settings inspector path]]
+                             :name   [:value window-inspector]
+                             :window [:path [:windows window-inspector]]}
+                      transformer=trans-inspector-window>
+      <ankha-container paths={:app [:path []]
+                              :inspector-path [:path [:settings inspector path]]}
+                       transformer=trans-ankha-inspector>
+      </ankha-container>
+    </draggable-window>
+  
+    <keyboard-handler paths={:key-map [:path [:settings key-bindings app]]}>
+    </keyboard-handler>
+  
     <audio.players paths={:audio-settings   [:path [:audio]]
                           :selected-channel [:path [:selected-channel]]
                           :channels         [:path [:channels]]
                           :id               [:path [:selected-channel]]}
                    transformer=trans-audio-players>
     </audio.players>
-    <sidebar.sidebar paths={}>
+    
+    <aside class="sidebar">
       <sidebar.titled-menu paths={:menu-opened? [:path [:settings menus user-menu open]]}>
         <sidebar.current-user paths={:users [:path [:users]]
                                      :current-user-email [:path [:current-user-email]]}
                               transformer=trans-current-user>
         </sidebar.current-user>
+  
         <sidebar.menu-item paths={:text [:value "Edit Account"]
                                   :message [:value settings-opened]}>
         </sidebar.menu-item>
+  
         <sidebar.menu-item paths={:text [:value "Logout"]
                                   :message [:value user-logged-out]}>
         </sidebar.menu-item>
+  
         <sidebar.menu-item paths={:text [:value "Help"]
                                   :message [:value help-opened]}>
         </sidebar.menu-item>
+  
         <sidebar.menu-item paths={:text [:value "About Omchaya"]
                                   :message [:value about-opened]}>
         </sidebar.menu-item>
       </sidebar.titled-menu>
-      <sidebar.widget paths={:title [:value "People"]
+  
+      <div class="widgets">
+        <titled-panel paths={:title [:value "People"]
                              :icon  [:value "/assets/images/people_icon.png"]}>
-        <sidebar.people-widget paths={:selected-channel [:path [:selected-channel]]
-                                      :channels         [:path [:channels]]
-                                      :users            [:path [:users]]
-                                      :settings         [:path [:settings]]
-                                      :search-filter    [:path [:settings forms search value]]}
-                               transformer=trans-people-widget>
-        </sidebar.people-widget>
-      </sidebar.widget>
-      <sidebar.widget paths={:title [:value "Playlist"]
-                             :icon  [:value "/assets/images/video_icon.png"]}>
-        <sidebar.playlist-widget paths={:selected-channel [:path [:selected-channel]]
+          <sidebar.people-widget paths={:selected-channel [:path [:selected-channel]]
                                         :channels         [:path [:channels]]
+                                        :users            [:path [:users]]
+                                        :settings         [:path [:settings]]
                                         :search-filter    [:path [:settings forms search value]]}
-                                 transformer=trans-playlist-widget>
-        </sidebar.playlist-widget>
-        <sidebar.playlist-action-widget paths={:selected-channel [:path [:selected-channel]]
-                                               :channels         [:path [:channels]]
-                                               :search-filter    [:path [:settings forms search value]]}
-                                        transformer=trans-playlist-action-widget>
-        </sidebar.playlist-action-widget>
-      </sidebar.widget>
-      <sidebar.widget paths={:title [:value "Media"]
+                                 transformer=trans-people-widget>
+          </sidebar.people-widget>
+        </titled-panel>
+  
+        <titled-panel paths={:title [:value "Playlist"]
+                             :icon  [:value "/assets/images/video_icon.png"]}>
+          <sidebar.playlist-widget paths={:selected-channel [:path [:selected-channel]]
+                                          :channels         [:path [:channels]]
+                                          :search-filter    [:path [:settings forms search value]]}
+                                   transformer=trans-playlist-widget>
+          </sidebar.playlist-widget>
+  
+          <sidebar.playlist-action-widget paths={:selected-channel [:path [:selected-channel]]
+                                                 :channels         [:path [:channels]]
+                                                 :search-filter    [:path [:settings forms search value]]}
+                                          transformer=trans-playlist-action-widget>
+          </sidebar.playlist-action-widget>
+        </titled-panel>
+  
+        <titled-panel paths={:title [:value "Media"]
                              :icon  [:value "/assets/images/media_icon.png"]}>
-        <sidebar.media-widget paths={:selected-channel [:path [:selected-channel]]
-                                     :channels         [:path [:channels]]
-                                     :search-filter    [:path [:settings forms search value]]}
-                              transformer=trans-media-widget>
-        </sidebar.media-widget>
-        <sidebar.media-action-widget paths={:channel-id [:path [:selected-channel]]}>
-        </sidebar.media-action-widget>
-      </sidebar.widget>
-    </sidebar.sidebar>
-    <main-area.main-area paths={:selected-channel [:path [:selected-channel]]}>
-      <main-area.activities-list paths={:search-filter      [:path [:settings forms search value]]
-                                        :selected-channel   [:path [:selected-channel]]
-                                        :channels           [:path [:channels]]
-                                        :current-user-email [:path [:current-user-email]]
-                                        :users              [:path [:users]]}
-                                 transformer=trans-activities-list>
-      </main-area.activities-list>
-      <main-area.chatbox paths={:input-focused? [:path [:settings forms user-message focused]]
-                                :input-value    [:path [:settings forms user-message value]]}>
-      </main-area.chatbox>
+          <sidebar.media-widget paths={:selected-channel [:path [:selected-channel]]
+                                       :channels         [:path [:channels]]
+                                       :search-filter    [:path [:settings forms search value]]}
+                                transformer=trans-media-widget>
+          </sidebar.media-widget>
+  
+          <sidebar.media-action-widget paths={:channel-id [:path [:selected-channel]]}>
+          </sidebar.media-action-widget>
+        </titled-panel>
+      </div>
+    </aside>
+  
+    <main-area paths={:selected-channel [:path [:selected-channel]]}>
+      <activities-list paths={:search-filter      [:path [:settings forms search value]]
+                              :selected-channel   [:path [:selected-channel]]
+                              :channels           [:path [:channels]]
+                              :current-user-email [:path [:current-user-email]]
+                              :users              [:path [:users]]}
+                       transformer=trans-activities-list>
+      </activities-list>
+  
+      <chatbox paths={:input-focused? [:path [:settings forms user-message focused]]
+                      :input-value    [:path [:settings forms user-message value]]}>
+      </chatbox>
     </main-area.main-area>
+  
     <navbar.navbar paths={:channels [:path [:channels]]
                           :settings [:path [:settings]]}>
     </navbar.navbar>
