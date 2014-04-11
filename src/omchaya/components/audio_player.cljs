@@ -3,16 +3,17 @@
             [om.core :as om]
             [sablono.core :as html :refer-macros [html]]))
 
-(defn player [audio-data owner opts]
+(defn player [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
       (or (:react-name opts) "AudioPlayer"))
     om/IRender
     (render [this]
-      (let [{:keys [sfx player audio-settings id]} audio-data
+      (let [audio-data (:data payload)
+            {:keys [sfx player audio-settings id]} audio-data
             audio-source (:source-url player)
-            comm (get-in opts [:comms :controls])]
+            comm (om/get-shared owner [:comms :controls])]
         (html/html
          [:div {:style #js {:display "none"}}
           [:audio.audio-player

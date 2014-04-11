@@ -1,6 +1,7 @@
 (ns omchaya.components.main-area
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [clojure.string :as string]
+            [omchaya.components.common :as common]
             [omchaya.datetime :as dt]
             [omchaya.plugins :as plugins]
             [omchaya.utils :as utils]
@@ -10,10 +11,10 @@
 
 (def delimiter-re #" ")
 
-(defn activity-content [current-user-email users settings author activity]
+(defn activity-content [current-user-email users author activity]
   (let [content (-> (string/split (:content activity) delimiter-re)
                     plugins/pastie
-                    (plugins/mentions current-user-email users settings author)
+                    (plugins/mentions current-user-email users author)
                     (plugins/slash-me current-user-email users)
                     plugins/slash-play
                     plugins/emoticons
@@ -22,7 +23,7 @@
                     plugins/hex-embed)]
     (interpose " " content)))
 
-(defn activity-entry [current-user-email users settings author activity]
+(defn activity-entry [current-user-email users author activity]
   (list
    [:div.activity {:id (str "activity-" (:id activity))
                    :class (when (= current-user-email (:email author)) "current_user")
@@ -32,7 +33,7 @@
     [:div.readable
      [:span.user (or (:full-name author)
                      (:email author))]
-     [:span.content (activity-content current-user-email users settings author activity)]]
+     [:span.content (activity-content current-user-email users author activity)]]
     (map (fn [media]
            [:div.media-entry
             media])
@@ -42,28 +43,44 @@
                              plugins/vimeo-embed)))]))
 
 
-(defn chatbox [comm opts]
-  [:div.chatbox [:textarea.chat-input
-                 (merge
-                  {:on-focus #(put! comm [:user-message-focused])
-                   :on-blur #(put! comm [:user-message-blurred])
-                   :on-key-up #(if (= (.. % -which) 13)
-                                 (put! comm [:user-message-submitted])
-                                 (put! comm [:user-message-updated (.. % -target -value)]))}
-                  (when-not (:input-focused? opts)
-                    {:value (:input-value opts)}))]
-   [:button.post {:on-click #(put! comm [:user-message-submitted])} "Post"]])
+(defn chatbox [payload owner opts]
+  (reify
+    om/IRender
+    (render [_]
+      (html/html
+       (let [comm (om/get-shared owner [:comms :controls])]
+         [:div.chatbox [:textarea.chat-input
+                        (merge
+                         {:on-focus #(put! comm [:user-message-focused])
+                          :on-blur #(put! comm [:user-message-blurred])
+                          :on-key-up #(if (= (.. % -which) 13)
+                                        (put! comm [:user-message-submitted])
+                                        (put! comm [:user-message-updated (.. % -target -value)]))}
+                         (when-not (get-in payload [:data :input-focused?])
+                           {:value (get-in payload [:data :input-value])}))]
+          [:button.post {:on-click #(put! comm [:user-message-submitted])} "Post"]])))))
 
-(defn activities-list [filtered-activities opts]
-  (map #(let [author (get-in opts [:users (:author %)])]
-          (activity-entry (:current-user-email opts)
-                          (:users opts)
-                          (:settings opts)
-                          author
-                          %))
-       filtered-activities))
+(defn activities-list [payload owner opts]
+  (reify
+    om/IRender
+    (render [_]
+      (html/html
+       (let [data          (:data payload)
+             {:keys [search-filter activities
+                     current-user-email users]} data
+             re-filter     (when search-filter (js/RegExp. search-filter "ig"))
+             filtered-activities (if re-filter
+                                   (filter #(.match (:content %) re-filter) activities)
+                                   activities)]
+         [:div
+          (map #(let [author (get-in users [(:author %)])]
+                  (activity-entry current-user-email
+                                  users
+                                  author
+                                  %))
+               filtered-activities)])))))
 
-(defn main-area [{:keys [channel search-filter]} owner opts]
+(defn main-area [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
@@ -71,18 +88,16 @@
     om/IRender
     (render [this]
       (html/html
-       (let [comm       (get-in opts [:comms :controls])
-             re-filter  (when search-filter (js/RegExp. search-filter "ig"))
-             activities (:activities channel)
-             filtered-activities (if re-filter
-                                   (filter #(.match (:content %) re-filter) activities)
-                                   activities)]
+       (let [my-path (:com-path opts)
+             data    (:data payload)
+             {:keys  [selected-channel]} data
+             comm    (om/get-shared owner [:comms :controls])]
          [:article.main-area
           [:header.header
            [:a.nav-toggle.button.left {:href "#"
-                                       :on-click #(put! comm [:left-sidebar-toggled])} [:i.icon-comments]]
+                                       :on-click #(put! comm [:sidebar-toggled :left])} [:i.icon-comments]]
            [:a.sidebar-toggle.button.right {:href "#"
-                                            :on-click #(put! comm [:right-sidebar-toggled])} [:i.icon-reorder]]
+                                            :on-click #(put! comm [:sidebar-toggled :right])} [:i.icon-reorder]]
            [:a.logo
             {:href "#/"
              :on-click (constantly false)}
@@ -91,13 +106,12 @@
               :alt "Omchaya"
               :title "Omchaya - A Kandan Client"}]]]
           [:div#channels
-           [:div.channels-pane {:id (str "channels-" (:id channel))
-                                :class (when (:selected channel) "active")}
+           [:div.channels-pane {:id (str "channels-" selected-channel)
+                                :class "active"}
             [:div.paginated-activities
              (when (:loading-more-messages channel)
                [:div.pagination
                 [:i.icon-spinner.icon-spin.icon-2x]
                 "Loading previous messages"])
-             (activities-list filtered-activities opts)]
-            (chatbox comm opts)]]])))))
+             (common/build-children my-path payload)]]]])))))
  

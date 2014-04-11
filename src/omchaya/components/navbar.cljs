@@ -1,7 +1,6 @@
 (ns omchaya.components.navbar
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [om.core :as om]
-            [omchaya.routes :as routes]
             [omchaya.utils :as utils]
             [sablono.core :as html :refer-macros [html]]))
 
@@ -17,7 +16,7 @@
       (when (:loading channel)
         [:i.icon-spinner.icon-spin])]]))
 
-(defn navbar [data owner opts]
+(defn navbar [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
@@ -25,8 +24,9 @@
     om/IRender
     (render [this]
       (html/html
-       (let [comm (get-in opts [:comms :controls])
-             settings (:settings data)]
+       (let [comm (om/get-shared owner [:comms :controls])
+             data (:data payload)
+             settings (get-in payload [:data :settings])]
          [:nav.nav {:class (when (get-in settings [:forms :search :focused]) "search-focus")}
           [:form.search
            {:action "/search"

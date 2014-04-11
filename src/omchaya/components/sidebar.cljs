@@ -3,6 +3,7 @@
             [clojure.string :as string]
             [goog.string :as gstring]
             [om.core :as om]
+            [omchaya.components.common :as common]
             [omchaya.utils :as utils]
             [sablono.core :as html :refer-macros [html]]))
 
@@ -16,17 +17,19 @@
    (or (:full-name person)
        (:username person))])
 
-(defn people-widget [{:keys [channel-users-emails search-filter] :as data} owner opts]
+(defn people-widget [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
       (or (:react-name opts) "PeopleWidget"))
     om/IRender
-    (render [this]
+    (render [_]
       (html/html
-       (let [comm (get-in opts [:comms :controls])
+       (let [data (:data payload)
+             {:keys [channel-users-emails search-filter]} (:data payload)
+             comm      (om/get-shared owner [:comms :controls])
              re-filter (when search-filter (js/RegExp. search-filter "ig"))
-             channel-users (vals (select-keys (:users opts) channel-users-emails))
+             channel-users (vals (select-keys (:users data) channel-users-emails))
              fil-users (if re-filter
                          (filter #(or (.match (:full-name %) re-filter)
                                       (.match (:email %) re-filter)
@@ -34,15 +37,6 @@
                          channel-users)]
          [:ul.user_list
           (map (partial people-entry comm) fil-users)])))))
-
-(defn current-user [comm user]
-  [:a.user-menu-toggle
-   {:href "#"
-    :on-click (comp (constantly false)
-                    #(put! comm [:user-menu-toggled]))}
-   (utils/gravatar-for (:email user))
-   [:i.icon-angle.button.right {:style #js {:height "inherit"}}]
-   (:full-name user)])
 
 (defn media-name [src]
   (-> src
@@ -52,22 +46,22 @@
       first
       gstring/urlDecode))
 
-(defn playlist-entry [comm opts entry]
+(defn playlist-entry [comm selected-channel playing-order entry]
   (let [src (:src entry)
         order (:order entry)
         name (media-name src)]
     [:li.user
      (merge {:title src
              :key (str (:order entry) src)}
-            (when (= (:order entry) (get-in opts [:channels (:selected-channel opts) :player :playing-order]))
+            (when (= (:order entry) playing-order)
               {:style #js {:background-color "#ccc"}}))
      [:a
       {:style #js {:cursor "pointer"}
        :on-click (comp (constantly false)
-                       #(put! comm [:playlist-entry-played [order (:selected-channel opts)]]))}
+                       #(put! comm [:playlist-entry-played [order selected-channel]]))}
       (:order entry) ". " name]]))
 
-(defn playlist-widget [{:keys [player search-filter]} owner opts]
+(defn playlist-widget [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
@@ -75,27 +69,31 @@
     om/IRender
     (render [_]
       (html/html
-       (let [comm (get-in opts [:comms :controls])
+       (let [data (:data payload)
+             {:keys [player search-filter selected-channel]} data
+             comm (om/get-shared owner [:comms :controls])
              re-filter (when search-filter (js/RegExp. search-filter "ig"))
              fil-playlist (if re-filter
                             (filter #(.match (media-name (:src %)) re-filter) (:playlist player))
                             (:playlist player))]
          [:div 
           [:ul.user_list
-           (map (partial playlist-entry comm opts)
+           (map (partial playlist-entry comm selected-channel (:playing-order player))
                 (sort-by :order fil-playlist))]])))))
 
-(defn playlist-action-widget [{:keys [player]} owner opts]
-  (let [comm (get-in opts [:comms :controls])]
+(defn playlist-action-widget [payload owner opts]
+  (let [comm (om/get-shared owner [:comms :controls])]
     (html/html
-     [:div.dropzone
-      (if (= (:state player) :playing)
-        [:i.fa.fa-pause
-         {:style #js {:cursor "pointer"}
-          :on-click #(put! comm [:audio-player-stopped (:selected-channel opts)])}]
-        [:i.fa.fa-play
-         {:style #js {:cursor "pointer"}
-          :on-click #(put! comm [:audio-player-started (:selected-channel opts)])}])])))
+     (let [data (:data payload)
+           {:keys [selected-channel player]} data]
+       [:div.dropzone
+        (if (= (:state player) :playing)
+          [:i.fa.fa-pause
+           {:style #js {:cursor "pointer"}
+            :on-click #(put! comm [:audio-player-stopped selected-channel])}]
+          [:i.fa.fa-play
+           {:style #js {:cursor "pointer"}
+            :on-click #(put! comm [:audio-player-started selected-channel])}])]))))
 
 (def icon-map
   {"png" "img"
@@ -115,7 +113,7 @@
       [:img {:src (str "/assets/images/" (get icon-map extension "file") "_icon.png")}]
       [:span (:name media)]]]))
 
-(defn media-widget [{:keys [channel-id media search-filter]} owner opts]
+(defn media-widget [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
@@ -123,7 +121,9 @@
     om/IRender
     (render [this]
       (html/html
-       (let [comm (:comm opts)
+       (let [data (:data payload)
+             {:keys [media search-filter]} data
+             comm (om/get-shared owner [:comms :controls])
              re-filter (when search-filter (js/RegExp. search-filter "ig"))]
          [:ul.file_list
           (map (partial media-entry comm) (if re-filter
@@ -150,7 +150,7 @@
       [:input#file {:type "file", :name "file"}]
       [:div.dropzone "Drop file here to upload"]])))
 
-(defn widget [data owner opts]
+(defn widget [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
@@ -158,18 +158,68 @@
     om/IRender
     (render [this]
       (html/html
-       (let [comm (:comm opts)]
+       (let [data (:data payload)
+             my-path (:com-path opts)]
          [:div.widget
           [:h5.widget-header.unselectable
-           [:img {:src (:icon opts)}]
-           (:title opts)]
+           [:img {:src (:icon data)}]
+           (:title data)]
           [:div.widget-content
-           (om/build (:content-comp opts) (:content-data data) {:opts (:content-opts data)})]
-          (when (:action-comp opts)
+           (when (first (:children payload))
+             (common/build-child my-path (common/get-app payload) 0 (first (:children payload))))]
+          (when (second (:children payload))
             [:div.widget-action-bar
-             (om/build (:action-comp opts) (:action-data data) {:opts (:action-opts data)})])])))))
+             (common/build-child my-path (common/get-app payload) 1 (second (:children payload)))])])))))
 
-(defn sidebar [data owner opts]
+(defn current-user [payload owner opts]
+  (reify
+    om/IRender
+    (render [_]
+      (html/html
+       (let [comm (om/get-shared owner [:comms :controls])
+             user (get-in payload [:data :user])]
+         [:div.current-user-menu-title
+          (utils/gravatar-for (:email user))
+          (:full-name user)])))))
+
+(defn menu-item [payload owner opts]
+  (reify
+    om/IRender
+    (render [_]
+      (html/html
+       (let [comm (om/get-shared owner [:comms :controls])
+             text (get-in payload [:data :text])
+             message (get-in payload [:data :message])]
+         [:a {:href "#"
+              :on-click #(put! comm [message])} text])))))
+
+(defn titled-menu [payload owner opts]
+  (reify
+    om/IRender
+    (render [_]
+      (html/html
+       (let [my-path (:com-path opts)
+             comm (om/get-shared owner [:comms :controls])
+             menu-opened? (get-in payload [:data :menu-opened?])
+             children (common/children payload)
+             rest-children (rest children)]
+         [:div.header.user-header {:class (when menu-opened? "open-menu")}
+          [:a.user-menu-toggle
+           {:href "#"
+            :on-click (comp (constantly false)
+                            #(put! comm [:user-menu-toggled]))}
+           [:i.icon-angle.button.right {:style #js {:height "inherit"
+                                                    :float "right"}}]
+           (common/build-child my-path (common/get-app payload) 0 (first children))]
+           [:ul.user-menu
+            [:li]
+            (map (fn [idx child]
+                   [:li
+                    (common/build-child my-path (common/get-app payload) idx child)])
+                 (range 1 (inc (count rest-children)))
+                 rest-children)]])))))
+
+(defn sidebar [payload owner opts]
   (reify
     om/IDisplayName
     (display-name [_]
@@ -177,53 +227,12 @@
     om/IRender
     (render [this]
       (html/html
-       (let [comm (get-in opts [:comms :controls])
-             channel (:channel data)
-             settings (:settings data)
-             search-filter (:search-filter data)]
-         (print "Sidebar render")
+       (let [my-path (:com-path opts)
+             children (common/children payload)
+             rest-children (rest children)]
          [:aside.sidebar
-          [:div.header.user-header {:class (when (get-in settings [:menus :user-menu :open]) "open-menu")}
-           (current-user comm (get-in opts [:users (:current-user-email opts)]))
-           [:ul.user-menu
-            [:li]
-            [:li [:a {:href "#"
-                      :on-click #(put! comm [:settings-opened])} "Edit Account"]]
-            [:li
-             [:a
-              {:rel "nofollow",
-               :href "#"
-               :on-click #(put! comm [:user-logged-out])}
-              "Logout"]]
-            [:li [:a {:href "#"
-                      :on-click #(put! comm [:help-opened])} "Help"]]
-            [:li [:a {:href "#"
-                      :on-click #(put! comm [:about-opened])} "About Omchaya"]]]]
+          (common/build-child my-path (common/get-app payload) 0 (first (common/children payload)))
           [:div.widgets
-           (om/build widget
-                     {:content-data {:channel-users-emails (:users channel)
-                                     :search-filter search-filter}
-                      :content-opts opts}
-                     {:opts {:title "People"
-                             :icon "/assets/images/people_icon.png"
-                             :content-comp people-widget}})
-           (om/build widget
-                     {:content-data {:player        (:player channel)
-                                     :search-filter search-filter}
-                      :content-opts opts
-                      :action-data {:player (:player channel)}
-                      :action-opts opts}
-                     {:opts {:title "Playlist"
-                             :icon "/assets/images/video_icon.png"
-                             :content-comp playlist-widget
-                             :action-comp playlist-action-widget}})
-           (om/build widget
-                     {:content-data {:search-filter search-filter
-                                     :media       (:media channel)
-                                     :channel-id  (:id channel)}
-                      :content-opts {:comm comm}
-                      :action-data {:channel-id (:id channel)}}
-                     {:opts {:title "My Media"
-                             :icon "/assets/images/media_icon.png"
-                             :content-comp media-widget
-                             :action-comp media-action-widget}})]])))))
+           (map (partial common/build-child my-path (common/get-app payload))
+                (range 1 (inc (count rest-children)))
+                rest-children)]])))))
