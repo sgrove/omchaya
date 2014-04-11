@@ -1,151 +1,165 @@
 (ns omchaya.controllers.controls
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
             [cljs.reader :as reader]
-            [omchaya.utils :as utils :refer [mprint]]))
+            [omchaya.macros :as macros :include-macros true]
+            [omchaya.utils :as utils :refer [mprint]])
+  (:use-macros [omchaya.macros :only [defaction]]))
 
 (defmulti control-event
   (fn [target message args state] message))
 
-(defmethod control-event :default
+(defaction control-event :default
   [target message args state]
+  {}
   (mprint "Unknown controls: " (pr-str message))
-  state)
+  nil)
 
-(defmethod control-event :api-key-updated
+(defaction control-event :api-key-updated
   [target message api-key state]
-  (assoc-in state [:users (:current-user-email state) :api-key] api-key))
+  {:out {:api-key {:path [:settings :current-user :api-key]}}}
+  {:api-key api-key})
 
-(defmethod control-event :current-user-mentioned
+(defaction control-event :current-user-mentioned
   [target message [activity url] state]
-  (assoc-in state [:channels (:channel-id activity) :sfx :source-url] url))
+  {:out {:sfx-source-url {:path [:channels (:channel-id activity) :sfx :source-url]}}}
+  {:sfx-source-url url})
 
-(defmethod control-event :user-menu-toggled
+(defaction control-event :user-menu-toggled
   [target message args state]
-  (update-in state [:settings :menus :user-menu :open] not))
+  {:in  [open? {:path [:settings :menus :user-menu :open]}]
+   :out {:open? {:path [:settings :menus :user-menu :open]}}}
+  {:open? (not open?)})
 
-(defmethod control-event :tab-selected
+(defaction control-event :tab-selected
   [target message args state]
-  (let [old-channel    (get-in state [:channels (:selected-channel state)])
-        new-channel    (get-in state [:channels args])]
-    (-> state
-        (assoc :selected-channel args)
-        (assoc-in [:channels (:id old-channel) :selected] false)
-        (assoc-in [:channels args :selected] true))))
+  {:in [selected-channel {:path [:selected-channel]}]
+   :out {:new-selected-channel {:path [:selected-channel]}
+         :old-channel-selected {:path [:channels selected-channel :selected]}
+         :new-channel-selected {:path [:channels args :selected]}}}
+  {:new-selected-channel args
+   :old-channel-selected false
+   :new-channel-selected true})
 
-(defmethod control-event :search-form-focused
+(defaction control-event :search-form-focused
   [target message args state]
-  (assoc-in state [:settings :forms :search :focused] true))
+  {:out {:focused? {:path [:settings :forms :search :focused]}}}
+  {:focused? true})
 
-(defmethod control-event :search-form-blurred
+(defaction control-event :search-form-blurred
   [target message args state]
-  (assoc-in state [:settings :forms :search :focused] false))
+  {:out {:focused? {:path [:settings :forms :search :focused]}}}
+  {:focused? false})
 
-(defmethod control-event :search-form-updated
+(defaction control-event :search-form-updated
   [target message new-value state]
-  (assoc-in state [:settings :forms :search :value] new-value))
+  {:out {:form-value {:path [:settings :forms :search :value]}}}
+  {:form-value new-value})
 
-(defmethod control-event :user-message-focused
+(defaction control-event :user-message-focused
   [target message args state]
-  (assoc-in state [:settings :forms :user-message :focused] true))
+  {:out {:focused? {:path [:settings :forms :user-message :focused]}}}
+  {:focused? true})
 
-(defmethod control-event :user-message-blurred
+(defaction control-event :user-message-blurred
   [target message args state]
-  (assoc-in state [:settings :forms :user-message :focused] false))
+  {:out {:focused? {:path [:settings :forms :user-message :focused]}}}
+  {:focused? false})
 
-(defmethod control-event :user-message-updated
+(defaction control-event :user-message-updated
   [target message args state]
-  (assoc-in state [:settings :forms :user-message :value] args))
+  {:out {:message-value {:path [:settings :forms :user-message :value]}}}
+  {:message-value args})
 
-(defmethod control-event :audio-player-started
+(defaction control-event :audio-player-started
   [target message channel-id state]
-  (assoc-in state [:channels channel-id :player :state] :playing))
+  {:out {:player-state {:path [:channels channel-id :player :state]}}}
+  {:player-state :playing})
 
-(defmethod control-event :audio-player-stopped
+(defaction control-event :audio-player-stopped
   [target message channel-id state]
-  (assoc-in state [:channels channel-id :player :state] :stopped))
+  {:out {:player-state {:path [:channels channel-id :player :state]}}}
+  {:player-state :stopped})
 
-(defmethod control-event :audio-player-muted
+(defaction control-event :audio-player-muted
   [target message args state]
-  (assoc-in state [:audio :muted] true))
+  {:out {:muted? {:path [:audio :muted]}}}
+  {:muted? true})
 
-(defmethod control-event :audio-player-unmuted
+(defaction control-event :audio-player-unmuted
   [target message args state]
-  (assoc-in state [:audio :muted] false))
+  {:out {:muted? {:path [:audio :muted]}}}
+  {:muted? false})
 
-(defmethod control-event :audio-player-unmuted
-  [target message args state]
-  (assoc-in state [:audio :muted] false))
-
-(defmethod control-event :audio-player-source-updated
+(defaction control-event :audio-player-source-updated
   [target message [src channel-id] state]
-  (assoc-in state [:channels channel-id :player :source-url] src))
+  {:out {:source-url {:path [:channels channel-id :player :source-url]}}}
+  {:source-url src})
 
-(defmethod control-event :audio-player-unmuted
-  [target message args state]
-  (assoc-in state [:audio :muted] false))
+(defaction control-event :playlist-entry-queued
+  [target message [channel-id url] state]
+  {:in  [playlist  {:path [:channels channel-id :player :playlist]}]
+   :out {:playlist {:path [:channels channel-id :player :playlist]}}}
+  {:playlist (conj playlist {:order (inc (count playlist))
+                             :src url})})
 
-(defmethod control-event :playlist-entry-queued
-  [target message args state]
-  (let [[channel-id url] args]
-    (update-in state [:channels channel-id :player :playlist]
-               (fn [playlist]
-                 (conj playlist {:order (inc (count playlist))
-                                 :src url})))))
-
-(defmethod control-event :playlist-entry-played
+(defaction control-event :playlist-entry-played
   [target message [order channel-id] state]
-  (-> state
-      (assoc-in [:channels channel-id :player :playing-order] order)
-      (assoc-in [:channels channel-id :player :loading] true)))
+  {:out {:playing-order {:path [:channels channel-id :player :playing-order]}
+         :loading {:path [:channels channel-id :player :loading]}}}
+  {:playing-order order
+   :loading true})
 
-(defmethod control-event :user-message-submitted
+(defaction control-event :user-message-submitted
   [target message args state]
-  (if (empty? (get-in state [:settings :forms :user-message :value]))
-    state
-    (let [content    (get-in state [:settings :forms :user-message :value])
-          user       (get-in state [:users (:current-user-email state)])
-          channel    (get-in state [:channels (:selected-channel state)])
-          activity   {:content    content
+  {:in [current-user-email {:path [:current-user-email]}
+        selected-channel   {:path [:selected-channel]}
+        current-user-msg   {:path [:settings :forms :user-message :value]}
+        content            {:path [:settings :forms :user-message :value]}
+        user               {:path [:users current-user-email]}
+        channel            {:path [:channels selected-channel]}
+        activities         {:path [:channels (:id channel) :activities]}]
+   :out {:user-message {:path [:settings :forms :user-message :value]}
+         :activities {:path [:channels (:id channel) :activities]}}}
+  (if (empty? current-user-msg)
+    {}
+    (let [activity   {:content    content
                       :author     (:email user)
-                      :created_at (js/Date.)}]
-      (-> state
-          (assoc-in [:settings :forms :user-message :value] nil)
-          (update-in [:channels (:id channel) :activities] (comp (partial sort-by :created_at) conj) activity)
-          (update-in [:channels (:id channel) :activities] vec)))))
+                      :created_at (js/Date.)}
+          activities (->> activity
+                           (conj activities)
+                           (sort-by :created_at)
+                           vec)]
+      {:user-message nil
+       :activities activities})))
 
-(defmethod control-event :settings-opened
+(defaction control-event :user-logged-out
   [target message args state]
-  (assoc-in state [:settings :menus :user-menu :open] false))
+  {:out {:menu-open? {:path [:settings :menus :user-menu :open]}
+         :user-email {:path [:current-user-email]}}}
+  {:menu-open? false
+   :user-email nil})
 
-(defmethod control-event :help-opened
+(defaction control-event :about-opened
   [target message args state]
-  (assoc-in state [:settings :menus :user-menu :open] false))
+  ;; TODO: Figure out how to make menu-closing more modular
+  {:out {:menu-open? {:path [:settings :menus :user-menu :open]}}}
+  {:menu-open? false})
 
-(defmethod control-event :about-opened
-  [target message args state]
-  (assoc-in state [:settings :menus :user-menu :open] false))
-
-(defmethod control-event :user-logged-out
-  [target message args state]
-  (-> state
-      (assoc-in [:settings :menus :user-menu :open] false)
-      (assoc-in [:current-user-email] nil)))
-
-(defmethod control-event :audio-source-loaded
+(defaction control-event :audio-source-loaded
   [target message channel-id state]
-  (assoc-in state [:channels channel-id :player :loading] false))
+  {:out {:player-loading? {:path [:channels channel-id :player :loading]}}}
+  {:player-loading? false})
 
-(defmethod control-event :channel-destroyed
+(defaction control-event :channel-destroyed
   [target message channel-id state]
-  (assoc-in state [:channels channel-id :loading] true))
+  {:out {:player-loading? {:path [:channels channel-id :loading]}}}
+  {:player-loading true})
 
-(defmethod control-event :right-sidebar-toggled
-  [target message channel-id state]
-  (update-in state [:settings :sidebar :right :open] not))
-
-(defmethod control-event :left-sidebar-toggled
-  [target message channel-id state]
-  (update-in state [:settings :sidebar :left :open] not))
+(defaction control-event :sidebar-toggled
+  [target message sidebar-id state]
+  {:in  [sidebar-open?  {:path [:settings :sidebar sidebar-id :open]}]
+   :out {:sidebar-open? {:path [:settings :sidebar sidebar-id :open]}}}
+  {:sidebar-open? (not sidebar-open?)})
 
 (defmulti window-drag-event
   (fn [message args state] message))
@@ -184,24 +198,36 @@
       (assoc window-state :position new-position))
     window-state))
 
-(defmethod control-event :draggable
-  [target message [sub-message {:keys [name] :as args}] state]
-  (update-in state [:windows name]
-             #(window-drag-event sub-message (:position args) %)))
+(defaction control-event :draggable
+  [target message [sub-message {:keys [name position]}] state]
+  {:in  [window-state  {:path [:windows name]}]
+   :out {:window-state {:path [:windows name]}}}
+  {:window-state (window-drag-event sub-message position window-state)})
 
-(defmethod control-event :toggle-inspector-key-pressed
+(defaction control-event :toggle-inspector-key-pressed
   [target message args state]
-  (update-in state [:windows :window-inspector :open] not))
+  {:in  [open?  {:path [:windows :window-inspector :open]}]
+   :out {:open? {:path [:windows :window-inspector :open]}}}
+  {:open? (not open?)})
 
-(defmethod control-event :inspector-path-updated
-  [target message path state]
-  (assoc-in state [:settings :inspector :path] path))
+(defaction control-event :search-focus-key-pressed
+  [target message args state]
+  {:in  [message-input-focused?  {:path [:settings :forms :user-message :focused]}
+         search-input-focused?   {:path [:settings :forms :search :focused]}]
+   :out {:open? {:path [:windows :window-inspector :open]}}}
+  {:open? (not open?)})
 
-(defmethod control-event :state-restored
+(defaction control-event :inspector-path-updated
   [target message path state]
-  (let [str-data (.getItem js/localStorage "omchaya-state")]
-    (if (seq str-data)
-      (-> str-data
-          reader/read-string
-          (assoc :comms (:comms state)))
-      state)))
+  {:out {:path {:path [:settings :inspector :path]}}}
+  {:path path})
+
+(defaction control-event :state-restored
+  [target message path state]
+  {:out {:replaced-state {:path []}}}
+  {:replaced-state (let [str-data (.getItem js/localStorage "omchaya-state")]
+                     (if (seq str-data)
+                       (-> str-data
+                           reader/read-string
+                           (assoc :comms (:comms state)))
+                       state))})
