@@ -3,7 +3,8 @@
             [clojure.string :as string]
             [dommy.core :as dommy]
             [omchaya.api.mock :as api]
-            [omchaya.components.app :as app]
+            [omchaya.components.root :as root-com]
+            [omchaya.controllers.experiment :as xp-con]
             [omchaya.controllers.controls :as controls-con]
             [omchaya.controllers.post-controls :as controls-pcon]
             [omchaya.controllers.api :as api-con]
@@ -12,6 +13,7 @@
             [omchaya.api.kandan :as kandan-api]
             [omchaya.mock-data :as mock-data]
             [omchaya.routes :as routes]
+            [omchaya.structure :as structure]
             [omchaya.useful :as useful :refer [ffilter]]
             [omchaya.utils :as utils :refer [mprint]]
             [om.core :as om :include-macros true]
@@ -28,8 +30,9 @@
   (chan))
 
 (def app-state
-  (atom (mock-data/initial-state {:controls controls-ch
-                                  :api      api-ch})))
+  (atom (assoc (mock-data/initial-state {:controls controls-ch
+                                         :api      api-ch})
+          :coms structure/coms)))
 
 ;; :state-history is a vector of vectors, where the inner
 ;; vector is the same shape as the messages played
@@ -44,34 +47,39 @@
         record (if (filtered-message? m) m message)]
     (swap! history conj [channel record])))
 
+(defn swap-via-action [state action-results]
+  (reduce (fn [running [_ {:keys [path new-value]}]]
+            (when (:log-swap-paths? utils/initial-query-map)
+                (print "Swapping " (pr-str _) " at " (pr-str path) " => " (pr-str new-value)))
+            (if (and (vector? path)
+                     (empty? path))
+              new-value
+              (assoc-in running path new-value))) state action-results))
+
 (defn main [target state]
   (let [comms   (:comms @state)
-        history (or history (atom []))]
+        history (or history (atom []))
+        event-lookup {(:controls comms) {:name :controls
+                                         :controller controls-con/control-event
+                                         :post-controller controls-pcon/post-control-event!}
+                      (:api comms) {:name :api
+                                    :controller api-con/api-event
+                                    :post-controller api-pcon/post-api-event!}}]
     (routes/define-routes! state (.getElementById js/document "history-container"))
     (om/root
-     app/app
+     root-com/root
      state
      {:target target
-      :opts {:comms comms}})
+      :shared {:comms comms}})
     (go (while true
-          (alt!
-           (:controls comms) ([v]
-                                (when (:log-channels? utils/initial-player-state)
-                                  (mprint "Controls Verbose: " (pr-str v)))
-                                (let [previous-state @state]
-                                  (update-history! history :controls v)
-                                  (swap! state (partial controls-con/control-event target (first v) (second v)))
-                                  (controls-pcon/post-control-event! target (first v) (second v) previous-state @state)))
-           (:api comms) ([v]
-                           (when (:log-channels? utils/initial-player-state)
-                                  (mprint "API Verbose: " (pr-str v)))
-                           (let [previous-state @state]
-                             (update-history! history :api v)
-                             (swap! state (partial api-con/api-event target (first v) (second v)))
-                             (api-pcon/post-api-event! target (first v) (second v) previous-state @state)))
-           ;; Capture the current history for playback in the absence
-           ;; of a server to store it
-           (async/timeout 30000) (mprint (pr-str @history)))))))
+          (let [[v ch] (alts! (vals comms))
+                {:keys [name controller post-controller]} (get event-lookup ch)]
+            (when (:log-channels? utils/initial-query-map)
+              (print (pr-str name) " Verbose: " (pr-str v)))
+            (let [previous-state @state
+                  action-results (controller target (first v) (second v) @state)]
+              (swap! state swap-via-action action-results)
+              (post-controller target (first v) (second v) previous-state @state)))))))
 
 (defn setup! []
   (let [comms (:comms @app-state)]
