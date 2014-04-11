@@ -63,19 +63,20 @@
                   (sort-by :created_at (repeatedly (inc (rand-int 0))
                                                    #(random-message (utils/safe-sel title)))))
      :media (vec
-             (take (inc (rand-int 0))
+             (take (inc (rand-int (count media)))
                    (shuffle media)))
      :sfx {:source-url nil}
      :player {:source-url "https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"
               :playing-order -1
               :state :playing
               :loading false
-              :playlist []}}))
+              :playlist [{:order 1
+                          :src "https://dl.dropboxusercontent.com/u/412963/Why%20This%20Kolaveri%20Di%20Full%20Song%20Promo%20Video%20in%20HD%20-%20.mp3"}]}}))
 
 (defn initial-state [comms]
   (let [channels (into {} (map (comp (juxt :id identity) random-channel) (range 2 100)))]
     {:audio {:volume 100
-             :muted true}
+             :muted false}
      :windows {:window-inspector {:open false}}
      :settings {:message-limit 50
                 :forms {:search {:focused false}
@@ -83,7 +84,20 @@
                 :menus {:user-menu {:open false}}
                 :sidebar {:left {:open false}
                           :right {:open false}}
-                :inspector {:path [:users]}}
+                :inspector {:path [:users]}
+                :key-bindings {:app {;; Would be a good idea to make
+                                     ;; this a map, and allow a
+                                     ;; :apply? predicate to be passed
+                                     ;; in that gets the data fed to
+                                     ;; this component as a way of
+                                     ;; suppressing signals
+                                     "ctrl+slash" [:history-player-opened]
+                                     "ctrl+esc"   [:toggle-inspector-key-pressed]
+                                     "ctrl+1"     [:inspector-path-update-requested]
+                                     "ctrl+s"     [:state-persisted]
+                                     "ctrl+r"     [:state-restored]
+                                     "slash"      [:search-focus-key-pressed]
+                                     "esc"        [:blur-current-field-key-pressed]}}}
      :selected-channel "1"
      :channels (as-> channels ch
                      (assoc ch "1" (-> (random-channel 1 "Lobby")
