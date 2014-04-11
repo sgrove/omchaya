@@ -5,7 +5,7 @@
 (defn mention [name]
   [:span [:span.mention name] " "])
 
-(defn mentions [activity-pieces current-user-email users settings author]
+(defn mentions [activity-pieces current-user-email users author]
   (map (fn [piece]
          (let [[_ pre username post] (re-find #"(.*)@(\w+)(.*)" piece)]
            (if-let [at (and (string? piece)
