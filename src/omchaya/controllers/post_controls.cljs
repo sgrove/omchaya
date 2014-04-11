@@ -1,5 +1,6 @@
 (ns omchaya.controllers.post-controls
   (:require [cljs.core.async :as async :refer [>! <! alts! chan sliding-buffer put! close!]]
+            [cljs.reader :as reader]
             [clojure.string :as string]
             [dommy.core :as dommy]
             [omchaya.api.mock :as api]
@@ -123,8 +124,18 @@
 
 (defmethod post-control-event! :search-focus-key-pressed
   [target message args previous-state current-state]
-  (when-let [search-field (sel1 [target :input.query])]
-    (.focus search-field)))
+  (let [message-input-focused? (get-in current-state [:settings :forms :user-message :focused])]
+    (when-let [search-field (and (not message-input-focused?)
+                                 (sel1 [target :input.query]))]
+      (.focus search-field))))
+
+(defmethod post-control-event! :blur-current-field-key-pressed
+  [target message args previous-state current-state]
+  (let [message-input-focused? (get-in current-state [:settings :forms :user-message :focused])
+        search-input-focused?  (get-in current-state [:settings :forms :search :focused])]
+    (cond
+     message-input-focused? (put! (get-in current-state [:comms :controls]) [:user-message-blur-key-pressed])
+     search-input-focused?  (put! (get-in current-state [:comms :controls]) [:search-form-blur-key-pressed]))))
 
 (defmethod post-control-event! :search-form-blur-key-pressed
   [target message args previous-state current-state]
@@ -153,3 +164,17 @@
   [target message channel-id previous-state current-state]
   ;; Figure out re-layout code here
   )
+
+(defmethod post-control-event! :inspector-path-update-requested
+  [target message channel-id previous-state current-state]
+  (let [inspector-path-s (pr-str (get-in current-state [:settings :inspector :path]))
+        path-string (js/prompt "New path (must be edn-compatible)"
+                               inspector-path-s)]
+    (try
+      (put! (get-in current-state [:comms :controls]) [:inspector-path-updated (reader/read-string path-string)])
+      (catch js/Error e
+        (mprint "Not edn-compatible: " path-string)))))
+
+(defmethod post-control-event! :about-opened
+  [target message channel-id previous-state current-state]
+  (js/window.open "https://github.com/sgrove/omchaya"))
